@@ -1,0 +1,148 @@
+// Two-kernel voxel gravity simulation.
+//
+// Kernel 1 — BuildMassGrid
+//   Every particle atomically adds its scaled mass into the nearest voxel
+//   of a 16×16×16 uint grid.
+//
+// Kernel 2 — SimulateGravity
+//   Every particle reads all 4096 voxels plus the central planet to
+//   accumulate gravitational acceleration, then integrates.
+//   Cost: O(n * G^3) where G=16 -> 4096 reads per particle (vs. n for brute-force).
+//
+// Buffer layout
+//   _Particles     — particle state (32 bytes each)
+//   _MassGrid      — 16^3 uint voxels, reset to 0 each frame
+//                     mass stored as round(mass * MASS_FIXED_SCALE)
+
+#pragma kernel BuildMassGrid
+#pragma kernel SimulateGravity
+
+// Constants
+#define GRID_RES          16
+#define GRID_CELLS        4096        // 16*16*16
+// Mass is stored as fixed-point uint: real_mass = uint_val / MASS_FIXED_SCALE
+#define MASS_FIXED_SCALE  1000.0
+
+// Particle struct (must match C# StructLayout, 32 bytes)
+struct Particle
+{
+    float3 position;   // 12 bytes
+    float3 velocity;   // 12 bytes
+    float  mass;       //  4 bytes
+    float  _pad;       //  4 bytes  → 32 total
+};
+
+// Buffers
+RWStructuredBuffer<Particle> _Particles;
+
+// Flat 16³ voxel mass grid.
+// Flat index: ix + iy*GRID_RES + iz*GRID_RES*GRID_RES
+// Uses uint so InterlockedAdd is available on all DX11+ / Metal / Vulkan targets.
+RWStructuredBuffer<uint> _MassGrid;
+
+// Uniforms
+float3 _GridMin;        // world-space AABB minimum corner
+float3 _GridSize;       // world-space AABB total extent (GridMax - GridMin)
+
+float  _DeltaTime;
+float  _Gravity;
+float  _Softening;      // added to r² before sqrt to prevent singularity at r=0
+float  _Damping;        // velocity multiplier per step (1.0 = no damping)
+
+float3 _PlanetPosition;
+float  _PlanetMass;
+
+int    _ParticleCount;
+
+// Helpers Functions
+
+// World position -> integer voxel coordinate, clamped to grid bounds.
+int3 WorldToVoxel(float3 worldPos)
+{
+    float3 t = (worldPos - _GridMin) / _GridSize;  // normalised [0,1]
+    t        = clamp(t, 0.0, 0.9999);
+    return (int3)(t * (float)GRID_RES);
+}
+
+// 3D voxel coordinate -> flat buffer index.
+int VoxelIndex(int3 v)
+{
+    return v.x + v.y * GRID_RES + v.z * GRID_RES * GRID_RES;
+}
+
+// Centre of a voxel in world space.
+float3 VoxelCenter(int3 v)
+{
+    float3 cellSize = _GridSize / (float)GRID_RES;
+    return _GridMin + ((float3)v + 0.5) * cellSize;
+}
+
+// Kernel 1: BuildMassGrid
+//  Each thread = one particle.
+//  Atomically accumulates fixed-point mass into the voxel that contains it.
+//  The grid is zeroed by C# (ComputeBuffer.SetData) before this dispatch runs.
+[numthreads(256, 1, 1)]
+void BuildMassGrid(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x;
+    if ((int)i >= _ParticleCount) return;
+
+    Particle p = _Particles[i];
+    int3     voxel = WorldToVoxel(p.position);
+    int      idx   = VoxelIndex(voxel);
+
+    // Convert float mass to fixed-point uint for atomic addition.
+    uint scaledMass = (uint)(p.mass * MASS_FIXED_SCALE);
+    InterlockedAdd(_MassGrid[idx], scaledMass);
+}
+
+// Kernel 2: SimulateGravity
+//  Each thread = one particle.
+//  Inner loop: 4096 voxel reads (all threads in a warp iterate the same index
+//  simultaneously, so each voxel fetch is a broadcast from L1/L2 — cache-friendly).
+[numthreads(256, 1, 1)]
+void SimulateGravity(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x;
+    if ((int)i >= _ParticleCount) return;
+
+    Particle p = _Particles[i];
+    float3   acc = float3(0, 0, 0);
+
+    // Gravity from the voxel mass grid
+    //  We force [loop] here because the unrolled loop would probably break (too many iterations)
+    //  plus the reads are from a small buffer (fits easily in cache)
+    //  and every particle reads the whole thing, so all the threads go through all of them together
+    [loop]  // forces compiler to leave loops, and not "unroll" 
+    for (int iz = 0; iz < GRID_RES; iz++)
+    for (int iy = 0; iy < GRID_RES; iy++)
+    for (int ix = 0; ix < GRID_RES; ix++)
+    {
+        int3  voxel   = int3(ix, iy, iz);
+        uint  rawMass = _MassGrid[VoxelIndex(voxel)];
+        if (rawMass == 0u) continue;            // empty cell — free skip
+
+        float  voxMass   = (float)rawMass / MASS_FIXED_SCALE;
+        float3 delta     = VoxelCenter(voxel) - p.position;
+        float  distSq    = dot(delta, delta) + _Softening;
+        float  invDist   = rsqrt(distSq);       // fast reciprocal sqrt
+
+        // gravitational accelleration
+        acc += delta * (invDist * _Gravity * voxMass * invDist * invDist);
+    }
+
+    // Gravity from the central planet (exact, not voxelised)
+    {
+        float3 delta  = _PlanetPosition - p.position;
+        float  distSq = dot(delta, delta) + _Softening;
+        float  inv    = rsqrt(distSq);
+        acc += delta * (inv * _Gravity * _PlanetMass * inv * inv);
+    }
+
+    // Symplectic Euler integration: https://www.slideserve.com/reinert/numeric-integration-methods-powerpoint-ppt-presentation
+    p.velocity += acc * _DeltaTime;
+    p.velocity *= _Damping;
+    p.position += p.velocity * _DeltaTime;
+
+    _Particles[i] = p;
+}

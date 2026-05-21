@@ -78,7 +78,7 @@ Shader "Custom/LesShader"
                 // Object Space Animation
                 float3 pos = IN.positionOS.xyz;
 
-                //pos.y += sin(_Time.y + pos.x * 4);
+                pos.y += sin(_Time.y + pos.x * 4);
 
                 // World Space
                 float3 worldPos = TransformObjectToWorld(pos);
