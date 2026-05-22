@@ -89,28 +89,16 @@ Shader "Custom/TimShader"
                 //half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xy ) * _BaseColor;
                 half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
 
-                // Normalize worldNormal
-                float3 normal = abs(normalize(IN.normal));
+                float3 normal = normalize(IN.normal);
+	            float diffuse = max(dot(normal, normalize(mainLight.direction)), 0.0f);
+                
+                
+                half4 light = diffuse * (1.0f - shadow) * _SunColor + _AmbientColor;
+	            light.x = min(light.x, 1.0f);
+	            light.y = min(light.y, 1.0f);
+	            light.z = min(light.z, 1.0f);
 
-
-
-                // Alpha Clipping
-                // clip(color.a - 0.5);
-
-                // Bypass GetMainLight entirely and sample raw shadow map
-                float4 shadowCoord = TransformWorldToShadowCoord(IN.worldPos);
-                Light mainLight = GetMainLight(shadowCoord);
-                float light = dot(IN.normal, mainLight.direction) * .5 + .5 + _Offset;
-                //float light = saturate(dot(IN.normal, mainLight.direction)) + _Offset;
-
-                float lighting = light * mainLight.shadowAttenuation;
-                //lighting = saturate(lighting);
-                lighting = step(_Threshold, lighting);
-
-                half4 lColor = half4(lighting * _SunColor.r, lighting * _SunColor.g, lighting * _SunColor.b, 1.0f);
-
-                half4 outputColor = half4(lighting * mainLight.color.r, lighting * mainLight.color.g, lighting * mainLight.color.b, 1.0f);
-                return lColor * texColor;
+                return texColor * light;
             }
 
             ENDHLSL
