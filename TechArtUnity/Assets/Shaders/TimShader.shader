@@ -10,9 +10,15 @@ Shader "Custom/TimShader"
         _AmbientColor ("Ambient Color", Color) = (1, 1, 1, 1)
     }
 
+    // TODO: add fog, add emmision, possibly add specualr thing
+
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "Queue"="Transparent" "RenderPipeline" = "UniversalPipeline" }
+        Tags {
+            "RenderType" = "Opaque"
+            "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Geometry"
+        }
         Cull Back
         Pass
         {
@@ -79,26 +85,45 @@ Shader "Custom/TimShader"
                 OUT.normal = TransformObjectToWorldNormal(IN.normal);
 
                 float4 clip = TransformObjectToHClip(OUT.positionHCS);
+                //OUT.screenPos = ComputeScreenPos(clip);
                 OUT.screenPos = ComputeScreenPos(OUT.positionHCS);
-
                 return OUT;
             }
+            
+            
+float near = 0.1f;
+float far = 100.0f;
 
+float linearizeDepth(float depth)
+{
+	return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
+}
+
+float logisticDepth(float depth, float steepness, float offset)
+{
+	float zVal = linearizeDepth(depth);
+	return (1 / (1 + exp(-steepness * (zVal - offset))));
+}
+            
             half4 frag(Varyings IN) : SV_Target
             {
                 //half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xy ) * _BaseColor;
-                half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
+                half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
 
+                float4 shadowCoord = TransformWorldToShadowCoord(IN.worldPos);
+                Light mainLight = GetMainLight(shadowCoord);
+ 
                 float3 normal = normalize(IN.normal);
-	            float diffuse = max(dot(normal, normalize(mainLight.direction)), 0.0f);
-                
-                
-                half4 light = diffuse * (1.0f - shadow) * _SunColor + _AmbientColor;
-	            light.x = min(light.x, 1.0f);
-	            light.y = min(light.y, 1.0f);
-	            light.z = min(light.z, 1.0f);
+	            float diffuse = max(dot(normal, normalize(mainLight.direction)), 0.0f) + _Offset;
 
-                return texColor * light;
+                float light = diffuse * mainLight.shadowAttenuation;
+                light = step(_Threshold, light);
+                half4 lightColor = light * _SunColor + _AmbientColor;
+                lightColor = min(lightColor, 1.0f);
+
+                half4 col = texColor * lightColor;
+                float depth = logisticDepth(IN.screenPos.z, 0.22f, 78.0f);
+                return lerp(col, _AmbientColor, depth);
             }
 
             ENDHLSL
