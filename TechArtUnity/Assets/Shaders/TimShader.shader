@@ -2,11 +2,12 @@ Shader "Custom/TimShader"
 {
     Properties
     {
-        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
-        [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
-        _LightRamp("Light Ramp", 2D) = "white" {}
-        _OutlineWidth("Outline Width", Float) = 0.1
-        _MaxLineDistance("Line Distance", Float) = 100
+        [MainTexture] _BaseMap("Albedo", 2D) = "white" {}
+        [MainColor] _BaseColor("Tint", Color) = (1, 1, 1, 1)
+        _Offset ("Offset", Range(-1.0, 1.0)) = 0.0
+        _Threshold ("Threshold", Range(0.0, 1.0)) = 0.5
+        _SunColor ("Sun Color", Color) = (1, 1, 1, 1)
+        _AmbientColor ("Ambient Color", Color) = (1, 1, 1, 1)
     }
 
     SubShader
@@ -19,7 +20,7 @@ Shader "Custom/TimShader"
             HLSLPROGRAM
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
-            #pragma multi_compile _ _SHADOWS_HARD
+            #pragma multi_compile _ _SHADOWS_SOFT
 
             #pragma vertex vert
             #pragma fragment frag
@@ -53,12 +54,11 @@ Shader "Custom/TimShader"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 float4 _BaseMap_ST;
+                float _Offset;
+                float _Threshold;
+                half4 _SunColor;
+                half4 _AmbientColor;
             CBUFFER_END
-
-            float3 VertexAnimation(float3 worldPos, float3 normal, float2 uv)
-            {
-                return worldPos + normal * sin(_Time.y + uv.y * 12) * .125;
-            }
 
             Varyings vert(Attributes IN)
             {
@@ -86,23 +86,13 @@ Shader "Custom/TimShader"
 
             half4 frag(Varyings IN) : SV_Target
             {
-                // half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xy ) * _BaseColor;
+                //half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xy ) * _BaseColor;
+                half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
 
                 // Normalize worldNormal
                 float3 normal = abs(normalize(IN.normal));
 
-                // Blend weights from world normal � force weights to sum to 1
-                float3 blend = pow(normal, 8.0); // higher power = sharper transitions
-                // This makes sure they add up to 1
-                blend /= blend.x + blend.y + blend.z; // L1 normalize divide by sum of components, can also "/= dot(blend, 1.0)"
 
-                // Sample texture from each axis
-                float4 xSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.yz);
-                float4 ySample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xz);// + frac(float2(_Time.y,_Time.y)));
-                float4 zSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xy);
-
-                // Blend
-                float4 color = xSample * blend.x + ySample * blend.y + zSample * blend.z;
 
                 // Alpha Clipping
                 // clip(color.a - 0.5);
@@ -110,25 +100,19 @@ Shader "Custom/TimShader"
                 // Bypass GetMainLight entirely and sample raw shadow map
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.worldPos);
                 Light mainLight = GetMainLight(shadowCoord);
-                float light = dot(IN.normal, mainLight.direction) * .5 + .5;
-                float shadow = mainLight.shadowAttenuation; //MainLightRealtimeShadow(shadowCoord); //read shadow map directly
-                float lighting = light * shadow;
-    
-                // NdotViewDir, results in stable value for V
-                float rampV = dot(IN.normal, normalize(GetWorldSpaceViewDir(IN.worldPos))) * 0.5 + 0.5;
+                float light = dot(IN.normal, mainLight.direction) * .5 + .5 + _Offset;
+                //float light = saturate(dot(IN.normal, mainLight.direction)) + _Offset;
 
-                float4 LightSample = SAMPLE_TEXTURE2D(_LightRamp, sampler_LightRamp, float2(light, rampV));
+                float lighting = light * mainLight.shadowAttenuation;
+                //lighting = saturate(lighting);
+                lighting = step(_Threshold, lighting);
 
-                // sample spherical harmonics for the environment
-                float3 ambientUp = SampleSH(float3(0, 1, 0));  // 100% day colour
-                float3 ambientDn = SampleSH(float3(0, -1, 0)); // 100% night colour
+                half4 lColor = half4(lighting * _SunColor.r, lighting * _SunColor.g, lighting * _SunColor.b, 1.0f);
 
-                float upness = dot(normalize(-mainLight.direction), float3(0,1,0)) * 0.5 + 0.5;
-                float nightNess = saturate( ( 1.0 - upness ) * 2 - .5);
-                float3 ambient = lerp(ambientUp, ambientDn, nightNess);
-                
-                return color * float4(mainLight.color, 1) * nightNess * min(LightSample.r * lighting + ambient.r, 1);// + float4(ambient,1) * nightNess;
+                half4 outputColor = half4(lighting * mainLight.color.r, lighting * mainLight.color.g, lighting * mainLight.color.b, 1.0f);
+                return lColor * texColor;
             }
+
             ENDHLSL
         }
 
