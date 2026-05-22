@@ -11,7 +11,6 @@ Shader "Custom/TimShader"
     }
 
     // TODO: add fog, add emmision, possibly add specualr thing
-
     SubShader
     {
         Tags {
@@ -19,6 +18,7 @@ Shader "Custom/TimShader"
             "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Geometry"
         }
+
         Cull Back
         Pass
         {
@@ -85,34 +85,34 @@ Shader "Custom/TimShader"
                 OUT.normal = TransformObjectToWorldNormal(IN.normal);
 
                 float4 clip = TransformObjectToHClip(OUT.positionHCS);
-                //OUT.screenPos = ComputeScreenPos(clip);
-                OUT.screenPos = ComputeScreenPos(OUT.positionHCS);
+                OUT.screenPos = ComputeScreenPos(clip);
+                //OUT.screenPos = ComputeScreenPos(OUT.positionHCS);
                 return OUT;
             }
             
+            float near = 0.1f;
+            float far = 100.0f;
             
-float near = 0.1f;
-float far = 100.0f;
-
-float linearizeDepth(float depth)
-{
-	return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
-}
-
-float logisticDepth(float depth, float steepness, float offset)
-{
-	float zVal = linearizeDepth(depth);
-	return (1 / (1 + exp(-steepness * (zVal - offset))));
-}
+            float linearizeDepth(float depth)
+            {
+            	return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
+            }
+            
+            float logisticDepth(float depth, float steepness, float offset)
+            {
+            	float zVal = linearizeDepth(depth);
+            	return (1 / (1 + exp(-steepness * (zVal - offset))));
+            }
             
             half4 frag(Varyings IN) : SV_Target
             {
                 //half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.worldPos.xy ) * _BaseColor;
                 half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
+                clip(texColor.a - 0.5);
 
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.worldPos);
                 Light mainLight = GetMainLight(shadowCoord);
- 
+                
                 float3 normal = normalize(IN.normal);
 	            float diffuse = max(dot(normal, normalize(mainLight.direction)), 0.0f) + _Offset;
 
@@ -123,13 +123,12 @@ float logisticDepth(float depth, float steepness, float offset)
 
                 half4 col = texColor * lightColor;
                 float depth = logisticDepth(IN.screenPos.z, 0.22f, 78.0f);
-                return lerp(col, _AmbientColor, depth);
+                return lerp(col, _AmbientColor, 0.0f);
             }
-
+            
             ENDHLSL
         }
 
-        // Easy enough to add shadow!
         UsePass "Universal Render Pipeline/Lit/ShadowCaster"
     }
 }
