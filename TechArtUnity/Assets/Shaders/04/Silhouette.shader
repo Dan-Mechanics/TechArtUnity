@@ -1,65 +1,88 @@
-Shader "Basics/Silhouette"
+Shader "Tutorial/Silhouette"
 {
-    Properties
-    {
-        _ForegroundColor("Foreground Color", Color) = (0, 0, 0, 0)
-        _BackgroundColor("Background Color", Color) = (1, 1, 1, 1)
-    }
-    SubShader
-    {
-        Tags
-        {
-            "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
-        }
+	Properties
+	{
+		_ForegroundColor("Foreground Color", Color) = (0, 0, 0, 1)
+		_BackgroundColor("Background Color", Color) = (1, 1, 1, 1)
 
-        Pass
-        {
-            HLSLPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
+	}
+	
+	SubShader
+	{
+		Tags
+		{
+			"RenderPipeline" = "UniversalPipeline"
+			"RenderType" = "Transparent"
+			"Queue" = "Transparent"
+		}
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+		Pass
+		{
+            // THIS IS WHERE THE ACTUAL "C SHADER CODE" LIVES.
+			HLSLPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
 
-            CBUFFER_START(UnityPerMaterial)
-                float4 _ForegroundColor;
-                float4 _BackgroundColor;
-            CBUFFER_END
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
-            struct appdata
+			// SRP-BATCHER COMPATIBILITY, CONSTANT BUFFER.
+			CBUFFER_START(UnityPerMaterial)
+				float4 _ForegroundColor;
+				float4 _BackgroundColor;
+			CBUFFER_END
+
+			struct Attributes
+			{
+				// OBJECT SPACE.
+				float4 positionOS : POSITION;
+
+				// SCREEN SPACE.
+				float4 positionSS : TEXCOORD0;
+			};
+
+			struct Varyings
+			{
+				// CLIP SPACE.
+				float4 positionCS : SV_POSITION;
+
+				// SCREEN SPACE.
+				float4 positionSS : TEXCOORD0;
+			};
+
+			Varyings vert(Attributes IN)
+			{
+				// INITIALIZE TO DEFAULT.
+				Varyings OUT = (Attributes)0;
+
+				OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+				OUT.positionSS = ComputeScreenPos(OUT.positionCS);
+
+				return OUT;
+			}
+
+            float linearizeDepth(float depth)
             {
-                float4 positionOS : POSITION;
-            };
-
-            struct v2f
+            	float near = 0.1f;
+            	float far = 100.0f;
+				return (2.0f * near * far) / (far + near - (depth * 2.0f - 1.0f) * (far - near));
+            }
+            
+            float logisticDepth(float depth, float steepness, float offset)
             {
-                float4 positionCS : SV_POSITION;
-                float4 positionSS : TEXCOORD0;
-            };
-
-            v2f vert(appdata v)
-            {
-                v2f o = (v2f)0;
-
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.positionSS = ComputeScreenPos(o.positionCS);
-
-                return o;
+            	float zVal = linearizeDepth(depth);
+            	return (1.0f / (1.0f + exp(-steepness * (zVal - offset))));
             }
 
-            float4 frag(v2f i) : SV_TARGET
-            {
-                float2 screenUV = i.positionSS.xy / i.positionSS.w;
-                float rawDepth = SampleSceneDepth(screenUV);
+			float4 frag(Varyings IN) : SV_TARGET
+			{
+				float2 screenUv = IN.positionSS.xy / IN.positionSS.w;
+				float rawDepth = SampleSceneDepth(screenUv);
+				float depth = logisticDepth(rawDepth, 0.22f, 78.0f);
+				return lerp(_ForegroundColor, _BackgroundColor, depth);
+			}
 
-                float linearDepth = Linear01Depth(rawDepth, _ZBufferParams);
-
-                return lerp(_ForegroundColor, _BackgroundColor, linearDepth);
-            }
-
-            ENDHLSL
-        }
-    }
+			ENDHLSL
+		}
+	}
 }
