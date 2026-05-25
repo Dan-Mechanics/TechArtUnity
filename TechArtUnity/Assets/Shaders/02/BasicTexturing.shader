@@ -35,7 +35,7 @@ Shader "Tutorial/BasicTexturing"
             // IS FOR SPR-BATCHING.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
-                float4 _BaseTexture_ST;
+                float4 _BaseTexture_ST; // TILING AND OFFSET ( SCALING AND TRANSLATION ).
             CBUFFER_END
 
             TEXTURE2D(_BaseTexture);
@@ -61,7 +61,7 @@ Shader "Tutorial/BasicTexturing"
                 Varying OUT = (Varying)0;
 
                 OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
-                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTexture);
+                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTexture); // TILING AND OFFSET ( SCALING AND TRANSLATION ).
 
                 return OUT;
             }
