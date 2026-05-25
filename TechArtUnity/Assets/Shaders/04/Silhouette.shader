@@ -1,4 +1,4 @@
-Shader "Basics/Silhouette"
+Shader "Tutorial/Silhouette"
 {
     Properties
     {
@@ -28,32 +28,31 @@ Shader "Basics/Silhouette"
                 float4 _BackgroundColor;
             CBUFFER_END
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
             };
 
-            struct v2f
+            struct Varying
             {
                 float4 positionCS : SV_POSITION;
                 float4 positionSS : TEXCOORD0;
             };
 
-            v2f vert(appdata v)
+            Varying vert(Attributes IN)
             {
-                v2f o = (v2f)0;
+                Varying OUT = (Varying)0;
 
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.positionSS = ComputeScreenPos(o.positionCS);
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.positionSS = ComputeScreenPos(OUT.positionCS);
 
-                return o;
+                return OUT;
             }
 
-            float4 frag(v2f i) : SV_TARGET
+            float4 frag(Varying IN) : SV_TARGET
             {
-                float2 screenUV = i.positionSS.xy / i.positionSS.w;
+                float2 screenUV = IN.positionSS.xy / IN.positionSS.w;
                 float rawDepth = SampleSceneDepth(screenUV);
-
                 float linearDepth = Linear01Depth(rawDepth, _ZBufferParams);
 
                 return lerp(_ForegroundColor, _BackgroundColor, linearDepth);

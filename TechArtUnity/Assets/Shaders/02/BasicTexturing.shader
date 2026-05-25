@@ -1,4 +1,4 @@
-Shader "Basics/BasicTexturing"
+Shader "Tutorial/BasicTexturing"
 {
     Properties
     {
@@ -24,12 +24,15 @@ Shader "Basics/BasicTexturing"
             ZWrite On
             ZTest LEqual
 
+            // THIS IS WHERE THE ACTUAL "C SHADER CODE" LIVES.
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+            // MEANS CONSTANT BUFFER,
+            // IS FOR SPR-BATCHING.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float4 _BaseTexture_ST;
@@ -38,38 +41,39 @@ Shader "Basics/BasicTexturing"
             TEXTURE2D(_BaseTexture);
             SAMPLER(sampler_BaseTexture);
 
-            struct appdata
+            struct Attributes
             {
+                // OBJECT SPACE.
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
             };
 
-            struct v2f
+            struct Varying
             {
+                // CLIP SPACE.
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
             };
 
-            v2f vert(appdata v)
+            Varying vert(Attributes IN)
             {
-                v2f o = (v2f)0;
+                // DEFAULT INTIALIZATION.
+                Varying OUT = (Varying)0;
 
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTexture);
 
-                return o;
+                return OUT;
             }
 
-            float4 frag(v2f i) : SV_TARGET
+            float4 frag(Varying IN) : SV_TARGET
             {
-                float4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv);
+                float4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, IN.uv);
                 return textureColor * _BaseColor;
             }
 
             ENDHLSL
         }
-
-        // DepthOnly and DepthNormals passes added in Part 4.
 
         Pass
         {
@@ -87,28 +91,26 @@ Shader "Basics/BasicTexturing"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
             };
 
-            struct v2f
+            struct Varying
             {
                 float4 positionCS : SV_POSITION;
             };
 
-            v2f depthOnlyVert(appdata v)
+            Varying depthOnlyVert(Attributes IN)
             {
-                v2f o = (v2f)0;
-
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-
-                return o;
+                Varying OUT = (Varying)0;
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                return OUT;
             }
 
-            float depthOnlyFrag(v2f i) : SV_TARGET
+            float depthOnlyFrag(Varying IN) : SV_TARGET
             {
-                return i.positionCS.z;
+                return IN.positionCS.z;
             }
 
             ENDHLSL
@@ -129,32 +131,32 @@ Shader "Basics/BasicTexturing"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
             };
 
-            struct v2f
+            struct Varying
             {
                 float4 positionCS : SV_POSITION;
                 float3 normalWS : TEXCOORD0;
             };
 
-            v2f depthNormalsVert(appdata v)
+            Varying depthNormalsVert(Attributes IN)
             {
-                v2f o = (v2f)0;
+                Varying OUT = (Varying)0;
 
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
-                o.normalWS = NormalizeNormalPerVertex(normalWS);
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                float3 normalWS = TransformObjectToWorldNormal(IN.normalOS);
+                OUT.normalWS = NormalizeNormalPerVertex(normalWS);
 
-                return o;
+                return OUT;
             }
 
-            float4 depthNormalsFrag(v2f i) : SV_TARGET
+            float4 depthNormalsFrag(Varying IN) : SV_TARGET
             {
-                float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
+                float3 normalWS = NormalizeNormalPerPixel(IN.normalWS);
                 return float4(normalWS, 0.0f);
             }
 
