@@ -1,11 +1,10 @@
-Shader "Tutorial/03"
+Shader "Tutorial/ScrollingTexture"
 {
 	Properties
 	{
 		_BaseColor("Base Color", Color) = (1, 1, 1, 1)
 		_BaseTexture("Base Texture", 2D) = "white" {}
-		[Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend("Source Blend Mode", Integer) = 5
-		[Enum(UnityEngine.Rendering.BlendMode)] _DstBlend("Destination Blend Mode", Integer) = 10
+		_ScrollSpeed("Scroll Speed", Vector) = (0, 0, 0, 0)
 	}
 	
 	SubShader
@@ -13,25 +12,25 @@ Shader "Tutorial/03"
 		Tags
 		{
 			"RenderPipeline" = "UniversalPipeline"
-			"RenderType" = "Transparent"
-			"Queue" = "Transparent"
+			"RenderType" = "Opaque"
+			"Queue" = "Geometry"
 		}
 
 		Pass
 		{
-			Blend [_SrcBlend] [_DstBlend]
-			
 			// THIS IS WHERE THE ACTUAL "C SHADER CODE" LIVES.
 			HLSLPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/GlobalSamplers.hlsl"
+			
 			// SRP-BATCHER COMPATIBILITY, CONSTANT BUFFER.
 			CBUFFER_START(UnityPerMaterial)
 				float4 _BaseColor;
 				// TILING AND OFFSET ( SCALING AND TRANSLATION ).
 				float4 _BaseTexture_ST;
+				float2 _ScrollSpeed;
 			CBUFFER_END
 
 			TEXTURE2D(_BaseTexture);
@@ -64,7 +63,8 @@ Shader "Tutorial/03"
 
 			float4 frag(Varyings IN) : SV_TARGET
 			{
-				float4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, IN.uv);
+				float2 scrolledUv = IN.uv + _ScrollSpeed * _Time.y;
+				float4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_LinearRepeat, scrolledUv);
 				return textureColor * _BaseColor;
 			}
 

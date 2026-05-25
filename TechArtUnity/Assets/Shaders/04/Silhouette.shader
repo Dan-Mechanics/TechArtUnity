@@ -78,8 +78,8 @@ Shader "Tutorial/Silhouette"
 			{
 				float2 screenUv = IN.positionSS.xy / IN.positionSS.w;
 				float rawDepth = SampleSceneDepth(screenUv);
-				// float depth = logisticDepth(rawDepth, 0.22f, 78.0f);
-				return lerp(_ForegroundColor, _BackgroundColor, rawDepth);
+				float depth = logisticDepth(rawDepth, 0.22f, 78.0f);
+				return lerp(_ForegroundColor, _BackgroundColor, depth);
 			}
 
 			ENDHLSL

@@ -1,4 +1,4 @@
-Shader "Tutorial/01"
+Shader "Tutorial/HelloWorld"
 {
 	Properties
 	{
