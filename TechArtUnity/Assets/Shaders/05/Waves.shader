@@ -59,12 +59,12 @@ Shader "Tutorial/Waves"
 			Varyings vert(Attributes IN)
 			{
 				// INITIALIZE TO DEFAULT.
-				Varyings OUT = (Attributes)0;
+				Varyings OUT = (Varyings)0;
 
 				float3 positionWS = TransformObjectToWorld(IN.positionOS.xyz);
 				float waveHeigth = sin(positionWS.x + positionWS.z + _Time.y * _WaveSpeed) * _WaveHeigth;
 				float3 newPositionWS = float3(positionWS.x, positionWS.y + waveHeigth, positionWS.z);
-					
+
 				OUT.positionCS = TransformWorldToHClip(newPositionWS);
 
 

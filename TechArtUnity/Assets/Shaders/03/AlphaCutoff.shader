@@ -52,7 +52,7 @@ Shader "Tutorial/AlphaCutoff"
 			Varyings vert(Attributes IN)
 			{
 				// INITIALIZE TO DEFAULT.
-				Varyings OUT = (Attributes)0;
+				Varyings OUT = (Varyings)0;
 
 				// APPLY TILING AND OFFSET.
 				OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTexture);

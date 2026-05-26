@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: waves
-  m_Shader: {fileID: 4800000, guid: 19e66a10045d4e04baea7ec181f02cf2, type: 3}
+  m_Name: tessellated_waves
+  m_Shader: {fileID: 4800000, guid: e8029ce9d53fd384881b306f8f7b237c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -117,18 +117,21 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _TessellationAmount: 18
+    - _TessellationFadeEnd: 50
+    - _TessellationFadeStart: 25
     - _WaveHeigth: 0.25
     - _WaveSpeed: 1
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.43543077, g: 0.5915592, b: 0.9716981, a: 1}
+    - _BaseColor: {r: 0.53092736, g: 0.60147834, b: 0.9150943, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &9035512330948758922
+--- !u!114 &506569084254581881
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}

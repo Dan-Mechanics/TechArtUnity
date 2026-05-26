@@ -39,7 +39,7 @@ Shader "Tutorial/HelloWorld"
 			Varyings vert(Attributes IN)
 			{
 				// INITIALIZE TO DEFAULT.
-				Varyings OUT = (Attributes)0;
+				Varyings OUT = (Varyings)0;
 
 				OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
 				return OUT;
