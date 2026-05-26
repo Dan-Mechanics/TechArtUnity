@@ -1,4 +1,4 @@
-Shader "Tutorial/AlphaBlendedTransparency"
+Shader "Tutorial/Waves"
 {
 	Properties
 	{
@@ -6,6 +6,8 @@ Shader "Tutorial/AlphaBlendedTransparency"
 		_BaseTexture("Base Texture", 2D) = "white" {}
 		[Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend("Source Blend Mode", Integer) = 5
 		[Enum(UnityEngine.Rendering.BlendMode)] _DstBlend("Destination Blend Mode", Integer) = 10
+		_WaveHeigth("Wave Height", Range(0.0, 1.0)) = 0.25
+		_WaveSpeed("Wave Speed", Range(0.0, 10.0)) = 1.0
 	}
 	
 	SubShader
@@ -33,6 +35,8 @@ Shader "Tutorial/AlphaBlendedTransparency"
 				float4 _BaseColor;
 				// TILING AND OFFSET ( SCALING AND TRANSLATION ).
 				float4 _BaseTexture_ST;
+				float _WaveHeigth;
+				float _WaveSpeed;
 			CBUFFER_END
 
 			TEXTURE2D(_BaseTexture);
@@ -57,9 +61,17 @@ Shader "Tutorial/AlphaBlendedTransparency"
 				// INITIALIZE TO DEFAULT.
 				Varyings OUT = (Attributes)0;
 
+				float3 positionWS = TransformObjectToWorld(IN.positionOS.xyz);
+				float waveHeigth = sin(positionWS.x + positionWS.z + _Time.y * _WaveSpeed) * _WaveHeigth;
+				float3 newPositionWS = float3(positionWS.x, positionWS.y + waveHeigth, positionWS.z);
+					
+				OUT.positionCS = TransformWorldToHClip(newPositionWS);
+
+
+
 				// APPLY TILING AND OFFSET.
 				OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTexture);
-				OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+				
 				return OUT;
 			}
 
