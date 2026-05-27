@@ -49,9 +49,6 @@ Shader "Tutorial/Clipped"
             TEXTURE2D(_BaseTexture);
             SAMPLER(sampler_BaseTexture);
 
-            TEXTURE2D(_NormalTexture);
-            SAMPLER(sampler_NormalTexture);
-
             struct appdata
             {
                 float4 positionOS : POSITION;
@@ -85,7 +82,6 @@ Shader "Tutorial/Clipped"
         }
 
         // ShadowCaster pass added in Part 6.
-
         Pass
         {
             Tags
@@ -109,15 +105,26 @@ Shader "Tutorial/Clipped"
             float3 _LightDirection;
             float3 _LightPosition;
 
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseColor;
+                float4 _BaseTexture_ST;
+                float _Threshold;
+            CBUFFER_END
+
+            TEXTURE2D(_BaseTexture);
+            SAMPLER(sampler_BaseTexture);
+
             struct appdata
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
             };
 
             struct v2f
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
             };
 
             float4 GetShadowPositionHClip(float3 positionOS, float3 normalOS)
@@ -133,7 +140,6 @@ Shader "Tutorial/Clipped"
 
                 float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
                 positionCS = ApplyShadowClamping(positionCS);
-
                 return positionCS;
             }
 
@@ -142,112 +148,18 @@ Shader "Tutorial/Clipped"
                 v2f o = (v2f)0;
 
                 o.positionCS = GetShadowPositionHClip(v.positionOS, v.normalOS);
-
+                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
                 return o;
             }
 
             float4 shadowPassFrag(v2f i) : SV_TARGET
             {
-                return 0;
-            }
-
-            ENDHLSL
-        }
-
-        // DepthOnly and DepthNormals passes added in Part 4.
-
-        Pass
-        {
-            Tags
-            {
-                "LightMode" = "DepthOnly"
-            }
-
-            ZWrite On
-            ColorMask R
-
-            HLSLPROGRAM
-            #pragma vertex depthOnlyVert
-            #pragma fragment depthOnlyFrag
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            struct appdata
-            {
-                float4 positionOS : POSITION;
-            };
-
-            struct v2f
-            {
-                float4 positionCS : SV_POSITION;
-            };
-
-            v2f depthOnlyVert(appdata v)
-            {
-                v2f o = (v2f)0;
-
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-
-                return o;
-            }
-
-            float depthOnlyFrag(v2f i) : SV_TARGET
-            {
-                return i.positionCS.z;
-            }
-
-            ENDHLSL
-        }
-
-        Pass
-        {
-            Tags
-            {
-                "LightMode" = "DepthNormals"
-            }
-
-            ZWrite On
-
-            HLSLPROGRAM
-            #pragma vertex depthNormalsVert
-            #pragma fragment depthNormalsFrag
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
-                float4 _BaseTexture_ST;
-            CBUFFER_END
-            
-            struct appdata
-            {
-                float4 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
-                float3 normalOS : NORMAL;
-            };
-
-            struct v2f
-            {
-                float4 positionCS : SV_POSITION;
-                float2 uv : TEXCOORD0;
-                float3 normalWS : TEXCOORD1;
-            };
-
-            v2f depthNormalsVert(appdata v)
-            {
-                v2f o = (v2f)0;
-
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
-                float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
-                o.normalWS = NormalizeNormalPerVertex(normalWS);
-                return o;
-            }
-
-            float4 depthNormalsFrag(v2f i) : SV_TARGET
-            {
-                float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
-                return float4(normalWS, 0.0f);
+                float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
+                if (baseColor.a < _Threshold)
+                    discard;
+                
+                //clip(baseColor.a - _Threshold);
+                return baseColor;
             }
 
             ENDHLSL
