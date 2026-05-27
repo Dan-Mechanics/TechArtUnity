@@ -21,9 +21,6 @@ Shader "Tutorial/FogTest"
             "Queue" = "Geometry"
         }
 
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
 struct Attributes
 {
     float4 positionOS : POSITION;
