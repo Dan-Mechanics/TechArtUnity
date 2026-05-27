@@ -73,8 +73,6 @@ Shader "Tutorial/Clipped"
             {
                 float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
                 clip(baseColor.a - _Threshold);
-              //  float3 finalColor = (ambientLighting + diffuseLighting) * baseColor.rgb + specularLighting + fresnelLighting;
-
                 return baseColor;
             }
 
@@ -155,11 +153,128 @@ Shader "Tutorial/Clipped"
             float4 shadowPassFrag(v2f i) : SV_TARGET
             {
                 float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
-                if (baseColor.a < _Threshold)
-                    discard;
-                
-                //clip(baseColor.a - _Threshold);
+                clip(baseColor.a - _Threshold);
                 return baseColor;
+            }
+
+            ENDHLSL
+        }
+
+        // DepthOnly and DepthNormals passes added in Part 4.
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "DepthOnly"
+            }
+
+            ZWrite On
+            ColorMask R
+
+            HLSLPROGRAM
+            #pragma vertex depthOnlyVert
+            #pragma fragment depthOnlyFrag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseColor;
+                float4 _BaseTexture_ST;
+                float _Threshold;
+            CBUFFER_END
+
+            TEXTURE2D(_BaseTexture);
+            SAMPLER(sampler_BaseTexture);
+
+            struct appdata
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            v2f depthOnlyVert(appdata v)
+            {
+                v2f o = (v2f)0;
+
+                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
+                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
+
+                return o;
+            }
+
+            float depthOnlyFrag(v2f i) : SV_TARGET
+            {
+                float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
+                clip(baseColor.a - _Threshold);
+                return baseColor;
+            }
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "DepthNormals"
+            }
+
+            ZWrite On
+
+            HLSLPROGRAM
+            #pragma vertex depthNormalsVert
+            #pragma fragment depthNormalsFrag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseColor;
+                float4 _BaseTexture_ST;
+                float _Threshold;
+            CBUFFER_END
+
+            TEXTURE2D(_BaseTexture);
+            SAMPLER(sampler_BaseTexture);
+
+            struct appdata
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normalOS : NORMAL;
+                float4 tangentOS : TANGENT;
+            };
+
+            struct v2f
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normalWS : TEXCOORD1;
+            };
+
+            v2f depthNormalsVert(appdata v)
+            {
+                v2f o = (v2f)0;
+
+                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
+                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
+                float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
+                o.normalWS = NormalizeNormalPerVertex(normalWS);
+                return o;
+            }
+
+            float4 depthNormalsFrag(v2f i) : SV_TARGET
+            {
+                float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
+                clip(baseColor.a - _Threshold);
+
+                float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
+                return float4(normalWS, 0.0f);
             }
 
             ENDHLSL
