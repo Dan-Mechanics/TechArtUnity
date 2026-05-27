@@ -171,7 +171,9 @@ Shader "Tutorial/FogDemo"
 
                 float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
 
-                float3 finalColor = (ambientLighting + diffuseLighting) * baseColor.rgb + specularLighting + fresnelLighting;
+               // float3 finalColor = (ambientLighting + diffuseLighting) * baseColor.rgb + specularLighting + fresnelLighting;
+                float3 finalColor = (ambientLighting + diffuseLighting) * _BaseColor.rgb + specularLighting + fresnelLighting;
+
 
 
                 #if defined(_FOG_FRAGMENT)
@@ -186,7 +188,14 @@ Shader "Tutorial/FogDemo"
                 half fogFactor = i.fogCoord;
                 #endif
 
+                //return float4(fogFactor, fogFactor, fogFactor, 1.0f);
+                //return SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, float2(fogFactor * 0.1f + _Time.x * 3.0f, 0.0f));
+
+                float3 prev = finalColor;
                 finalColor.rgb = MixFog(finalColor.rgb, fogFactor);
+
+                float3 diff = finalColor - prev;
+                finalColor = prev + diff*SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, float2(fogFactor * 0.1f + _Time.x * 3.0f, 0.0f));
                 //finalColor.a = OutputAlpha(finalColor.a, IsSurfaceTypeTransparent(_Surface));
 
                 //outColor = finalColor;

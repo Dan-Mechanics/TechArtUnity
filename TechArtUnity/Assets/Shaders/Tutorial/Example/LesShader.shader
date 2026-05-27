@@ -1,4 +1,4 @@
-Shader "Custom/LesShader"
+Shader "Tutorial/LesShader"
 {
     Properties
     {
