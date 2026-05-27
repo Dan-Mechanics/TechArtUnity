@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: additional_lights
-  m_Shader: {fileID: 4800000, guid: fd7b1f2f48a9cd842af9e721946f7f36, type: 3}
+  m_Name: fog_test
+  m_Shader: {fileID: 4800000, guid: d14a9fe4a6d358f46a8120cda1369a00, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
