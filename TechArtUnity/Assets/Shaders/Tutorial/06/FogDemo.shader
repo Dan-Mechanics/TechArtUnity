@@ -2,7 +2,7 @@ Shader "Tutorial/FogDemo"
 {
     Properties
     {
-        _BaseColor("Base Color", Color) = (1, 1, 1, 1)
+        //_BaseColor("Base Color", Color) = (1, 1, 1, 1)
         _BaseTexture("Base Texture", 2D) = "white" {}
         _NormalTexture("Normal Texture", 2D) = "bump" {}
         _NormalStrength("Normal Strength", Range(0.0, 2.0)) = 1.0
@@ -47,8 +47,9 @@ Shader "Tutorial/FogDemo"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
 
+            float4 _BaseColor;
+            // YOU WANT TO KEEP THIS AS SMALL AS POSSIBLE.
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
                 float4 _BaseTexture_ST;
                 float _NormalStrength;
                 float3 _AmbientLighting;
@@ -109,7 +110,7 @@ Shader "Tutorial/FogDemo"
                 return o;
             }
 
-            float4 frag(v2f i) : SV_TARGET
+            half4 frag(v2f i) : SV_TARGET
             {
                 float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
                 float3 viewWS = normalize(i.viewWS);
@@ -200,7 +201,7 @@ Shader "Tutorial/FogDemo"
 
                 //outColor = finalColor;
 
-                return float4(finalColor, 1.0f);
+                return half4(finalColor, 1.0f);
             }
 
             ENDHLSL

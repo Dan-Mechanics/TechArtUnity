@@ -31,6 +31,8 @@ public class WorldLightingColors : MonoBehaviour
             SetAmbientColor(tempAmbientColor);
         }
 
+        Shader.SetGlobalColor("_SunColor", sunColor);
+
         cam.backgroundColor = ambientColor;
         RenderSettings.fogColor = ambientColor;
         materials.ForEach(x => x.SetColor("_SunColor", sunColor));
