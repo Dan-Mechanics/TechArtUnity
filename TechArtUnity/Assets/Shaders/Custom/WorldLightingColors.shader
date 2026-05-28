@@ -3,8 +3,9 @@ Shader "Custom/WorldLightingColors"
     Properties
     {
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
-        _BaseTexture("Base Texture", 2D) = "white" {}
+        _BaseMap("Base Map", 2D) = "white" {}
         _AlphaThreshold("Alpha Threshold", Range(0, 1)) = 0.5
+        _EmissionMap("Emission Map", 2D) = "black" {}
     }
     
     SubShader
@@ -44,20 +45,24 @@ Shader "Custom/WorldLightingColors"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
 
             // UNIFORMS FROM WORLDLIGHTINGCOLORS.CS.
-            float _ShadingThreshold;
-            float _DiffuseBias;
-            float4 _SunColor;
-            float4 _SkyColor;
+            half _ShadingThreshold;
+            half _DiffuseBias;
+            half4 _SunColor;
+            half4 _SkyColor;
             // STANDS FOR CONSTANT BUFFER,
             // IS USED FOR SPR-BATCHING.
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
-                float4 _BaseTexture_ST; // "ST" IS TILING AND OFFSET.
-                float _AlphaThreshold; 
+                half4 _BaseColor;
+                float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
+                float4 _EmissionMap_ST;
+                half _AlphaThreshold; 
             CBUFFER_END
 
-            TEXTURE2D(_BaseTexture);
-            SAMPLER(sampler_BaseTexture);
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            TEXTURE2D(_EmissionMap);
+            SAMPLER(sampler_EmmisionMap);
 
             // APPDATA.
             struct Attributes
@@ -84,7 +89,7 @@ Shader "Custom/WorldLightingColors"
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 output.positionCS = vertexInput.positionCS;
-                output.uv = TRANSFORM_TEX(input.uv, _BaseTexture);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
 
                 // GET UNITY FOGCOORD.
                 #if defined(_FOG_FRAGMENT)
@@ -93,7 +98,7 @@ Shader "Custom/WorldLightingColors"
                 output.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
                 #endif
 
-                output.uv = TRANSFORM_TEX(input.uv, _BaseTexture);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 return output;
@@ -102,9 +107,9 @@ Shader "Custom/WorldLightingColors"
             // HALF IS FOR COLORS, FLOAT IS FOR POSITIONS.
             half4 frag(Varyings input) : SV_TARGET
             {
-                half4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, input.uv);
+                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 clip(textureColor.a - _AlphaThreshold); // EARLY RETURN IF CLIPPED.
-                textureColor = textureColor * _BaseColor;
+                //textureColor = textureColor * _BaseColor;
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
@@ -116,7 +121,7 @@ Shader "Custom/WorldLightingColors"
                 lightAmount = step(_ShadingThreshold, lightAmount); // APPLY CEL SHADING.
 
                 half4 lightColor = lightAmount * _SunColor + _SkyColor;
-                lightColor = saturate(lightColor); // MAKE SURE NOT BRIGHER THAN _BASETEXTURE.
+                lightColor = saturate(lightColor); // MAKE SURE NOT BRIGHER THAN _BaseMap.
 
                 half4 litColor = textureColor * lightColor;
 
@@ -135,6 +140,10 @@ Shader "Custom/WorldLightingColors"
 
                 // APPLY FOG.
                 litColor.rgb = MixFog(litColor.rgb, fogFactor);
+
+                half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmmisionMap, input.uv).r;
+                litColor = lerp(litColor, textureColor, emmisive);
+
                 return litColor;
             }
 
@@ -167,12 +176,12 @@ Shader "Custom/WorldLightingColors"
             float3 _LightPosition;
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
-                float4 _BaseTexture_ST;
+                float4 _BaseMap_ST;
                 float _AlphaThreshold; 
             CBUFFER_END
 
-            TEXTURE2D(_BaseTexture);
-            SAMPLER(sampler_BaseTexture);
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
 
             struct Attributes
             {
@@ -207,13 +216,13 @@ Shader "Custom/WorldLightingColors"
             {
                 Varyings output = (Varyings)0;
                 output.positionCS = GetShadowPositionHClip(input.positionOS, input.normalOS);
-                output.uv = TRANSFORM_TEX(input.uv, _BaseTexture);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 return output;
             }
 
             half4 frag(Varyings input) : SV_TARGET
             {
-                clip(SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, input.uv).a - _AlphaThreshold);
+                clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a - _AlphaThreshold);
                 return 0;
             }
 
