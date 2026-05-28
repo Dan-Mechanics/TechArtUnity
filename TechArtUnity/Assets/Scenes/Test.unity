@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.5690637, g: 0.6054972, b: 0.8679245, a: 1}
+  m_FogColor: {r: 0.21791564, g: 0.5140023, b: 0.7830189, a: 1}
   m_FogMode: 2
   m_FogDensity: 0.178
   m_LinearFogStart: 0
@@ -370,7 +370,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.5690637, g: 0.6054972, b: 0.8679245, a: 1}
+  m_BackGroundColor: {r: 0.21791564, g: 0.5140023, b: 0.7830189, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -420,7 +420,7 @@ Transform:
   m_GameObject: {fileID: 1369737624}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.61, y: 1.27, z: -3.28}
+  m_LocalPosition: {x: 0.96, y: 1.39, z: -3.28}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -742,6 +742,30 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 1369737626}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: skyColor.b
+      value: 0.7830189
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: skyColor.g
+      value: 0.5140023
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: skyColor.r
+      value: 0.21791564
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: sunColor.b
+      value: 0.23113209
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: sunColor.g
+      value: 0.23113209
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: sunColor.r
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
