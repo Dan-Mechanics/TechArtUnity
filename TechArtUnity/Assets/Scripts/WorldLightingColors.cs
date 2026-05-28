@@ -23,6 +23,9 @@ namespace TechArtUnity
             Shader.SetGlobalFloat("_DiffuseBias", diffuseBias);
             for (int i = 0; i < materials.Length; i++)
             {
+                if (materials[i] == null)
+                    continue;
+
                 materials[i].SetColor("_SunColor", sunColor);
                 materials[i].SetColor("_SkyColor", skyColor);
             }
