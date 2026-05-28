@@ -30,8 +30,8 @@ Shader "Custom/WorldLightingColors"
                 "LightMode" = "UniversalForward"
             }
 
-            ZWrite On
-            ZTest LEqual
+         //   ZWrite On
+          //  ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -72,8 +72,6 @@ Shader "Custom/WorldLightingColors"
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
-                float4 tangentOS : TANGENT;
-                float2 dynamicLightmapUV : TEXCOORD2;
             };
 
             struct v2f
@@ -82,10 +80,7 @@ Shader "Custom/WorldLightingColors"
                 float2 uv : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
                 float3 positionWS : TEXCOORD2;
-                float3 viewWS : TEXCOORD3;
-                float4 tangentWS : TEXCOORD4;
-                float2 dynamicLightmapUV : TEXCOORD5;
-                float fogCoord : TEXCOORD6;
+                float fogCoord : TEXCOORD3;
             };
 
             v2f vert(appdata v)
@@ -102,25 +97,26 @@ Shader "Custom/WorldLightingColors"
                 o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
                 #endif
 
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
+               // o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
                 o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
-                o.viewWS = GetWorldSpaceViewDir(o.positionWS);
-                o.tangentWS = float4(TransformObjectToWorldDir(v.tangentOS.xyz), v.tangentOS.w);
-                o.dynamicLightmapUV = v.dynamicLightmapUV.xy * unity_DynamicLightmapST.xy + unity_DynamicLightmapST.zw;
+               // o.viewWS = GetWorldSpaceViewDir(o.positionWS);
+              //  o.tangentWS = float4(TransformObjectToWorldDir(v.tangentOS.xyz), v.tangentOS.w);
+              //  o.dynamicLightmapUV = v.dynamicLightmapUV.xy * unity_DynamicLightmapST.xy + unity_DynamicLightmapST.zw;
 
                 return o;
             }
 
             half4 frag(v2f i) : SV_TARGET
             {
-                float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
-                float3 viewWS = normalize(i.viewWS);
+                //float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
+                //float3 viewWS = normalize(i.viewWS);
+
                 float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 
-                //float3 normal = normalize(i.normal);
+                float3 normalWS = normalize(i.normalWS);
 	            float diffuse = max(dot(normalWS, normalize(mainLight.direction)), 0.0f) + _Offset;
 
                 float light = diffuse * mainLight.shadowAttenuation;
