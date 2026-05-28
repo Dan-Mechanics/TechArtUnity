@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 1, g: 0, b: 0.30183363, a: 1}
+  m_FogColor: {r: 0.5690637, g: 0.6054972, b: 0.8679245, a: 1}
   m_FogMode: 2
   m_FogDensity: 0.197
   m_LinearFogStart: 0
@@ -271,9 +271,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cam: {fileID: 1369737626}
   sunColor: {r: 1, g: 1, b: 1, a: 1}
-  skyColor: {r: 1, g: 0, b: 0.30183363, a: 1}
+  skyColor: {r: 0.5690637, g: 0.6054972, b: 0.8679245, a: 1}
   shadingThreshold: 0.098
   diffuseBias: 0
+  materials:
+  - {fileID: 2100000, guid: 1863ceef2425569408bc0569388555ee, type: 2}
 --- !u!4 &1022250838
 Transform:
   m_ObjectHideFlags: 0
@@ -540,7 +542,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 1, g: 0, b: 0.30183363, a: 1}
+  m_BackGroundColor: {r: 0.5690637, g: 0.6054972, b: 0.8679245, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0

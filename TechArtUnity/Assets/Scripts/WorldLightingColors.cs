@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TechArtUnity
@@ -10,17 +11,21 @@ namespace TechArtUnity
         [SerializeField] private Color skyColor = Color.blue;
         [SerializeField, Range(0f, 1f)] private float shadingThreshold = 0.5f;
         [SerializeField, Range(-1f, 1f)] private float diffuseBias = default;
+        [SerializeField] private Material[] materials = default;
 
         private void Update()
         {
-            if(cam != null)
+            if (cam != null)
                 cam.backgroundColor = skyColor;
 
             RenderSettings.fogColor = skyColor;
-            Shader.SetGlobalColor("_SunColor", sunColor);
-            Shader.SetGlobalColor("_SkyColor", skyColor);
             Shader.SetGlobalFloat("_ShadingThreshold", shadingThreshold);
             Shader.SetGlobalFloat("_DiffuseBias", diffuseBias);
+            for (int i = 0; i < materials.Length; i++)
+            {
+                materials[i].SetColor("_SunColor", sunColor);
+                materials[i].SetColor("_SkyColor", skyColor);
+            }
         }
     }
 }

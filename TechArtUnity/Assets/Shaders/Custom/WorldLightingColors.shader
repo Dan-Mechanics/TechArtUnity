@@ -5,7 +5,10 @@ Shader "Custom/WorldLightingColors"
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         _BaseMap("Base Map", 2D) = "white" {}
         _AlphaThreshold("Alpha Threshold", Range(0, 1)) = 0.5
+        _SunColor("Sun Color", Color) = (1, 1, 1, 1)
+        _SkyColor("Sky Color", Color) = (1, 1, 1, 1)
         _EmissionMap("Emission Map", 2D) = "black" {}
+        _ShadowMap("Shadow Map", 2D) = "white" {}
     }
     
     SubShader
@@ -43,26 +46,24 @@ Shader "Custom/WorldLightingColors"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
-
+ 
             // UNIFORMS FROM WORLDLIGHTINGCOLORS.CS.
             half _ShadingThreshold;
             half _DiffuseBias;
-            half4 _SunColor;
-            half4 _SkyColor;
             // STANDS FOR CONSTANT BUFFER,
             // IS USED FOR SPR-BATCHING.
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
-                float4 _EmissionMap_ST;
+                half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH
+                half4 _SkyColor; // UNIFORMS THE COLOR IS INACCURATE.
                 half _AlphaThreshold; 
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
-
             TEXTURE2D(_EmissionMap);
-            SAMPLER(sampler_EmmisionMap);
+            TEXTURE2D(_ShadowMap);
 
             // APPDATA.
             struct Attributes
@@ -109,7 +110,7 @@ Shader "Custom/WorldLightingColors"
             {
                 half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 clip(textureColor.a - _AlphaThreshold); // EARLY RETURN IF CLIPPED.
-                //textureColor = textureColor * _BaseColor;
+                textureColor = textureColor * _BaseColor;
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
@@ -117,10 +118,10 @@ Shader "Custom/WorldLightingColors"
                 float3 normalWS = normalize(input.normalWS);
 	            half diffuse = max(dot(normalWS, normalize(mainLight.direction)), 0.0f) - _DiffuseBias;
 
-                half lightAmount = diffuse * mainLight.shadowAttenuation;
-                lightAmount = step(_ShadingThreshold, lightAmount); // APPLY CEL SHADING.
+                half totalLight = diffuse * mainLight.shadowAttenuation * SAMPLE_TEXTURE2D(_ShadowMap, sampler_BaseMap, input.uv);
+                totalLight = step(_ShadingThreshold, totalLight); // APPLY CEL SHADING.
 
-                half4 lightColor = lightAmount * _SunColor + _SkyColor;
+                half4 lightColor = totalLight * _SunColor + _SkyColor;
                 lightColor = saturate(lightColor); // MAKE SURE NOT BRIGHER THAN _BaseMap.
 
                 half4 litColor = textureColor * lightColor;
@@ -137,11 +138,11 @@ Shader "Custom/WorldLightingColors"
                 #else
                     half fogFactor = input.fogCoord;
                 #endif
-
+ 
                 // APPLY FOG.
                 litColor.rgb = MixFog(litColor.rgb, fogFactor);
 
-                half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmmisionMap, input.uv).r;
+                half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_BaseMap, input.uv).r; 
                 litColor = lerp(litColor, textureColor, emmisive);
 
                 return litColor;
@@ -175,9 +176,11 @@ Shader "Custom/WorldLightingColors"
             float3 _LightDirection;
             float3 _LightPosition;
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
+                half4 _BaseColor;
                 float4 _BaseMap_ST;
-                float _AlphaThreshold; 
+                half4 _SunColor;
+                half4 _SkyColor;
+                half _AlphaThreshold; 
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
