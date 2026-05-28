@@ -307,6 +307,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -104.674
       objectReference: {fileID: 0}
+    - target: {fileID: 23490559892862816, guid: 3329101817c67e24fb70ba97b6168054, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 5b0be96218e756142a2e34319dbed986, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1306,11 +1310,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2441aa2d3c2c3644184214d051017a9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debugMode: 0
-  tempSunColor: {r: 1, g: 1, b: 1, a: 1}
-  tempAmbientColor: {r: 1, g: 1, b: 1, a: 1}
   cam: {fileID: 330585545}
-  materials: []
+  sunColor: {r: 0, g: 0, b: 0, a: 0}
+  skyColor: {r: 0, g: 0, b: 0, a: 0}
 --- !u!4 &870004851
 Transform:
   m_ObjectHideFlags: 0
