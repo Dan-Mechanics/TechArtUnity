@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.10257168, g: 0.10186009, b: 0.1981132, a: 1}
+  m_FogColor: {r: 0.22227661, g: 0.27140385, b: 0.3490566, a: 1}
   m_FogMode: 2
   m_FogDensity: 0.197
   m_LinearFogStart: 0
@@ -154,7 +154,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -270,8 +270,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 1369737626}
-  sunColor: {r: 0.087620154, g: 0.09772667, b: 0.103773594, a: 1}
-  skyColor: {r: 0.10257168, g: 0.10186009, b: 0.1981132, a: 1}
+  sunColor: {r: 1, g: 1, b: 1, a: 1}
+  skyColor: {r: 0.22227661, g: 0.27140385, b: 0.3490566, a: 1}
+  shadingThreshold: 0.161
+  diffuseBias: 0
 --- !u!4 &1022250838
 Transform:
   m_ObjectHideFlags: 0
@@ -343,18 +345,18 @@ PrefabInstance:
     - target: {fileID: 3321783486680160873, guid: e6ee60cd48ca7fa478e3065e30330864, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: a047ef5841aab5c4e9524760fe41dfca, type: 2}
+      objectReference: {fileID: 2100000, guid: 717031d0966d5454490434593a519fe8, type: 2}
     - target: {fileID: 3321783486682060937, guid: e6ee60cd48ca7fa478e3065e30330864, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.04
+      value: 1.11
       objectReference: {fileID: 0}
     - target: {fileID: 3321783486682060937, guid: e6ee60cd48ca7fa478e3065e30330864, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.315
+      value: 0.399
       objectReference: {fileID: 0}
     - target: {fileID: 3321783486682060937, guid: e6ee60cd48ca7fa478e3065e30330864, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.39
+      value: 0.438
       objectReference: {fileID: 0}
     - target: {fileID: 3321783486682060937, guid: e6ee60cd48ca7fa478e3065e30330864, type: 3}
       propertyPath: m_LocalRotation.w
@@ -659,7 +661,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.10257168, g: 0.10186009, b: 0.1981132, a: 1}
+  m_BackGroundColor: {r: 0.22227661, g: 0.27140385, b: 0.3490566, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
