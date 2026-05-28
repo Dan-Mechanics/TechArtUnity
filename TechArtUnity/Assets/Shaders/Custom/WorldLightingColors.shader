@@ -18,7 +18,6 @@ Shader "Custom/WorldLightingColors"
 
         Pass
         {
-            // DEFINE WHAT KIND OF PASS THIS IS.
             Tags
             {
                 "LightMode" = "UniversalForward"
@@ -31,117 +30,119 @@ Shader "Custom/WorldLightingColors"
             #pragma vertex vert
             #pragma fragment frag
 
+            // PREPARE MACRO SOUP.
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
-            #pragma multi_compile_fragment _ _LIGHT_COOKIES
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _LIGHT_COOKIES // THIS SHADER DOESN'T SUPPORT ADDITIONAL LIGHT,
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS // BUT IT MIGHT IN THE FUTURE SO I LEAVE IT IN.
 			#pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile _ _FORWARD_PLUS   // Use _CLUSTER_LIGHT_LOOP in Unity 6.1 and above.
-            #pragma multi_compile_fog
+            #pragma multi_compile _ _FORWARD_PLUS // USE _CLUSTER_LIGHT_LOOP IN UNITY 6.1 AND ABOVE.
+            #pragma multi_compile_fog // DECLARE USING FOG.
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
 
+            // UNIFORMS FROM WORLDLIGHTINGCOLORS.CS.
             float _ShadingThreshold;
             float _DiffuseBias;
             float4 _SunColor;
             float4 _SkyColor;
+            // STANDS FOR CONSTANT BUFFER,
+            // IS USED FOR SPR-BATCHING.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
-                float4 _BaseTexture_ST;
+                float4 _BaseTexture_ST; // "ST" IS TILING AND OFFSET.
                 float _AlphaThreshold; 
             CBUFFER_END
 
             TEXTURE2D(_BaseTexture);
             SAMPLER(sampler_BaseTexture);
 
-            struct appdata
+            // APPDATA.
+            struct Attributes
             {
-                float4 positionOS : POSITION;
+                float4 positionOS : POSITION; // OBJECT SPACE.
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
             };
-
-            struct v2f
+            
+            // VERT TO FRAG.
+            struct Varyings
             {
-                float4 positionCS : SV_POSITION;
+                float4 positionCS : SV_POSITION; // CLIP SPACE.
                 float2 uv : TEXCOORD0;
-                float3 normalWS : TEXCOORD1;
+                float3 normalWS : TEXCOORD1; // WORLD SPACE.
                 float3 positionWS : TEXCOORD2;
                 float fogCoord : TEXCOORD3;
             };
 
-            v2f vert(appdata v)
+            Varyings vert(Attributes input)
             {
-                v2f o = (v2f)0;
+                // DEFAULT INITIALIZATION.
+                Varyings output = (Varyings)0;
 
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.positionOS.xyz);
-                o.positionCS = vertexInput.positionCS;
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
+                output.positionCS = vertexInput.positionCS;
+                output.uv = TRANSFORM_TEX(input.uv, _BaseTexture);
+
+                // GET UNITY FOGCOORD.
                 #if defined(_FOG_FRAGMENT)
-                o.fogCoord = vertexInput.positionVS.z;
+                output.fogCoord = vertexInput.positionVS.z;
                 #else
-                o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
+                output.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
                 #endif
 
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
-                o.normalWS = TransformObjectToWorldNormal(v.normalOS);
-                o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
-                return o;
+                output.uv = TRANSFORM_TEX(input.uv, _BaseTexture);
+                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
+                return output;
             }
 
-            half4 frag(v2f i) : SV_TARGET
+            // HALF IS FOR COLORS, FLOAT IS FOR POSITIONS.
+            half4 frag(Varyings input) : SV_TARGET
             {
-                float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv);
-                clip(baseColor.a - _AlphaThreshold);
-                
-                //float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
-                //float3 viewWS = normalize(i.viewWS);
+                half4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, input.uv);
+                clip(textureColor.a - _AlphaThreshold); // EARLY RETURN IF CLIPPED.
+                textureColor = textureColor * _BaseColor;
 
-                float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
+                float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 
-                float3 normalWS = normalize(i.normalWS);
-	            float diffuse = max(dot(normalWS, normalize(mainLight.direction)), 0.0f) - _DiffuseBias;
+                float3 normalWS = normalize(input.normalWS);
+	            half diffuse = max(dot(normalWS, normalize(mainLight.direction)), 0.0f) - _DiffuseBias;
 
-                float light = diffuse * mainLight.shadowAttenuation;
-                light = step(_ShadingThreshold, light);
-                half4 lightColor = light * _SunColor + _SkyColor;
-                lightColor = saturate(lightColor);
+                half lightAmount = diffuse * mainLight.shadowAttenuation;
+                lightAmount = step(_ShadingThreshold, lightAmount); // APPLY CEL SHADING.
 
-                //float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
-                half4 col = baseColor * _BaseColor * lightColor;
-                //float depth = logisticDepth(IN.screenPos.z, 0.22f, 78.0f);
-                //return lerp(col, _AmbientColor, 0.0f);
-                // Combine Base Color with lighting.
+                half4 lightColor = lightAmount * _SunColor + _SkyColor;
+                lightColor = saturate(lightColor); // MAKE SURE NOT BRIGHER THAN _BASETEXTURE.
 
+                half4 litColor = textureColor * lightColor;
 
-               // float3 finalColor = (ambientLighting + diffuseLighting) * baseColor.rgb + specularLighting + fresnelLighting;
-                //float3 finalColor = (ambientLighting + diffuseLighting) * _BaseColor.rgb + specularLighting + fresnelLighting;
-
- 
-
+                // GET UNITY FOGFACTOR.
                 #if defined(_FOG_FRAGMENT)
                 #if (defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2))
-                float viewZ = -i.fogCoord;
-                float nearToFarZ = max(viewZ - _ProjectionParams.y, 0);
-                half fogFactor = ComputeFogFactorZ0ToFar(nearToFarZ);
+                    float viewZ = -input.fogCoord;
+                    float nearToFarZ = max(viewZ - _ProjectionParams.y, 0);
+                    half fogFactor = ComputeFogFactorZ0ToFar(nearToFarZ);
                 #else
-                half fogFactor = 0;
+                    half fogFactor = 0;
                 #endif
                 #else
-                half fogFactor = i.fogCoord;
+                    half fogFactor = input.fogCoord;
                 #endif
 
-                col.rgb = MixFog(col.rgb, fogFactor);
-                return half4(col.rgb, 1.0f);
+                // APPLY FOG.
+                litColor.rgb = MixFog(litColor.rgb, fogFactor);
+                return litColor;
             }
 
             ENDHLSL
         }
         
-        // ShadowCaster pass added in Part 6.
+        // HANDLE THE SHADOWS. WE CAN'T USE LIT SHADOWCASTER 
+        // BECAUSE IT DOESN'T WORK WITH ALPHA CLIPPING.
         Pass
         {
             Tags
@@ -173,14 +174,14 @@ Shader "Custom/WorldLightingColors"
             TEXTURE2D(_BaseTexture);
             SAMPLER(sampler_BaseTexture);
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
             };
 
-            struct v2f
+            struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
@@ -202,17 +203,17 @@ Shader "Custom/WorldLightingColors"
                 return positionCS;
             }
 
-            v2f vert(appdata v)
+            Varyings vert(Attributes input)
             {
-                v2f o = (v2f)0;
-                o.positionCS = GetShadowPositionHClip(v.positionOS, v.normalOS);
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
-                return o;
+                Varyings output = (Varyings)0;
+                output.positionCS = GetShadowPositionHClip(input.positionOS, input.normalOS);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseTexture);
+                return output;
             }
 
-            half4 frag(v2f i) : SV_TARGET
+            half4 frag(Varyings input) : SV_TARGET
             {
-                clip(SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv).a - _AlphaThreshold);
+                clip(SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, input.uv).a - _AlphaThreshold);
                 return 0;
             }
 
