@@ -25,6 +25,7 @@ Shader "Custom/WorldLightingColors"
 
         Pass
         {
+            // DEFINE WHAT KIND OF PASS THIS IS.
             Tags
             {
                 "LightMode" = "UniversalForward"
@@ -122,7 +123,7 @@ Shader "Custom/WorldLightingColors"
                 float light = diffuse * mainLight.shadowAttenuation;
                 light = step(_Threshold, light);
                 half4 lightColor = light * _SunColor + _SkyColor;
-                lightColor = min(lightColor, 1.0f);
+                lightColor = saturate(lightColor);
 
                 float4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
                 half4 col = baseColor * lightColor;
