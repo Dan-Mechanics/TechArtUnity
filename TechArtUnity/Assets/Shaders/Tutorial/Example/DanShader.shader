@@ -1,4 +1,4 @@
-Shader "Custom/TimShader"
+Shader "Custom/DanShader"
 {
     Properties
     {
