@@ -6,7 +6,7 @@ Shader "Custom/WorldLightingColorsClipped"
         _BaseMap("Base Map", 2D) = "white" {}
         _AlphaThreshold("Alpha Threshold", Range(0, 1)) = 0.5
         _SunColor("Sun Color", Color) = (1, 1, 1, 1)
-        _SkyColor("Sky Color", Color) = (1, 1, 1, 1)
+        _SkyColor("Sky Color", Color) = (0, 0, 1, 1)
         _EmissionMap("Emission Map", 2D) = "black" {}
         _ShadowMap("Shadow Map", 2D) = "white" {}
     }
