@@ -1,9 +1,10 @@
-Shader "Custom/WorldLightingColors"
+Shader "Custom/WorldLightingColorsClipped"
 {
     Properties
     {
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         _BaseMap("Base Map", 2D) = "white" {}
+        _AlphaThreshold("Alpha Threshold", Range(0, 1)) = 0.5
         _SunColor("Sun Color", Color) = (1, 1, 1, 1)
         _SkyColor("Sky Color", Color) = (1, 1, 1, 1)
         _EmissionMap("Emission Map", 2D) = "black" {}
@@ -55,7 +56,8 @@ Shader "Custom/WorldLightingColors"
                 half4 _BaseColor;
                 float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
                 half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH UNIFORMS, THE COLOR IS INACCURATE.
-                half4 _SkyColor;
+                half4 _SkyColor; 
+                half _AlphaThreshold;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -108,8 +110,10 @@ Shader "Custom/WorldLightingColors"
             // HALF IS FOR COLORS, FLOAT IS FOR POSITIONS.
             half4 frag(Varyings input) : SV_TARGET
             {
-                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor; 
- 
+                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                clip(textureColor.a - _AlphaThreshold); // EARLY RETURN IF CLIPPED.
+                textureColor = textureColor * _BaseColor;
+
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 
@@ -148,7 +152,85 @@ Shader "Custom/WorldLightingColors"
             ENDHLSL
         }
         
-        // CAST STANDARD SHADOWS ON ENVIRONMENT.
-        UsePass "Universal Render Pipeline/Lit/ShadowCaster"
+        // HANDLE THE SHADOWS. WE CAN'T USE LIT SHADOWCASTER 
+        // BECAUSE IT DOESN'T WORK WITH ALPHA CLIPPING.
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "ShadowCaster"
+            }
+
+            ZWrite On
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
+            float3 _LightDirection;
+            float3 _LightPosition;
+            CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
+                float4 _BaseMap_ST;
+                half4 _SunColor;
+                half4 _SkyColor;
+                half _AlphaThreshold; 
+            CBUFFER_END
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            float4 GetShadowPositionHClip(float3 positionOS, float3 normalOS)
+            {
+                float3 positionWS = TransformObjectToWorld(positionOS);
+                float3 normalWS = TransformObjectToWorldNormal(normalOS);
+
+                #if _CASTING_PUNCTUAL_LIGHT_SHADOW
+                    float3 lightDirectionWS = normalize(_LightPosition - positionWS);
+                #else
+                    float3 lightDirectionWS = _LightDirection;
+                #endif
+
+                float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
+                positionCS = ApplyShadowClamping(positionCS);
+                return positionCS;
+            }
+
+            Varyings vert(Attributes input)
+            {
+                Varyings output = (Varyings)0;
+                output.positionCS = GetShadowPositionHClip((float3)input.positionOS, input.normalOS);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_TARGET
+            {
+                clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a - _AlphaThreshold);
+                return 0;
+            }
+
+            ENDHLSL
+        }
     }
 }
