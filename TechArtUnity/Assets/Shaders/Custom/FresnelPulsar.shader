@@ -136,8 +136,8 @@ Shader "Custom/FresnelPulsar"
             ColorMask 0
 
             HLSLPROGRAM
-            #pragma vertex shadowPassVert
-            #pragma fragment shadowPassFrag
+            #pragma vertex vert
+            #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -176,14 +176,14 @@ Shader "Custom/FresnelPulsar"
                 return positionCS;
             }
 
-            Varyings shadowPassVert(Attributes input)
+            Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;
                 output.positionCS = GetShadowPositionHClip(input.positionOS.xyz, input.normalOS);
                 return output;
             }
 
-            float4 shadowPassFrag(Varyings i) : SV_TARGET
+            float4 frag(Varyings i) : SV_TARGET
             {
                 return 0;
             }
