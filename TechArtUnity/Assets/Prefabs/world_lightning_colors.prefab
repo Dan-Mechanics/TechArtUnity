@@ -45,10 +45,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 0}
-  sunColor: {r: 1, g: 0.9964086, b: 0.7311321, a: 1}
-  skyColor: {r: 0.47921857, g: 0.506942, b: 0.8396226, a: 1}
-  shadingThreshold: 0.098
-  diffuseBias: 0
+  sunColor: {r: 1, g: 1, b: 1, a: 1}
+  skyColor: {r: 0.5213154, g: 0.5213154, b: 0.6698113, a: 1}
+  shadingThreshold: 0.409
+  diffuseBias: -0.01
   materials:
   - {fileID: 2100000, guid: aee3cf6e130992a45ab094b3cd45a26d, type: 2}
   - {fileID: 2100000, guid: 187e3a86d9543994591655cddac2db0a, type: 2}
