@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.47921857, g: 0.506942, b: 0.8396226, a: 1}
+  m_FogColor: {r: 0.61521006, g: 0.6157659, b: 0.745283, a: 1}
   m_FogMode: 2
   m_FogDensity: 0.058
   m_LinearFogStart: 0
@@ -491,7 +491,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.47921857, g: 0.506942, b: 0.8396226, a: 1}
+  m_BackGroundColor: {r: 0.61521006, g: 0.6157659, b: 0.745283, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -2350,6 +2350,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4523604845929254, guid: 28b03608ec7315044906c829c8f86f8b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.97645724
+      objectReference: {fileID: 0}
+    - target: {fileID: 4523604845929254, guid: 28b03608ec7315044906c829c8f86f8b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.000000014901161
+      objectReference: {fileID: 0}
+    - target: {fileID: 4523604845929254, guid: 28b03608ec7315044906c829c8f86f8b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.000000059604645
+      objectReference: {fileID: 0}
+    - target: {fileID: 4523604845929254, guid: 28b03608ec7315044906c829c8f86f8b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.21571127
+      objectReference: {fileID: 0}
+    - target: {fileID: 4523604845929254, guid: 28b03608ec7315044906c829c8f86f8b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -24.915
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2478,6 +2498,38 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 330585545}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: skyColor.b
+      value: 0.745283
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: skyColor.g
+      value: 0.6157659
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: skyColor.r
+      value: 0.61521006
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: sunColor.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: sunColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: sunColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: diffuseBias
+      value: -0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
+      propertyPath: shadingThreshold
+      value: 0.409
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
