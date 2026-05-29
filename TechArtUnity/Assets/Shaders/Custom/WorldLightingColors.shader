@@ -148,6 +148,8 @@ Shader "Custom/WorldLightingColors"
             ENDHLSL
         }
         
+        // DON'T USE LIT SHADOWCASTER FOR
+        // BETTER CBUFFER USAGE.
         Pass
         {
             Tags
@@ -185,13 +187,11 @@ Shader "Custom/WorldLightingColors"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
-                float2 uv : TEXCOORD0;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float2 uv : TEXCOORD0;
             };
 
             float4 GetShadowPositionHClip(float3 positionOS, float3 normalOS)

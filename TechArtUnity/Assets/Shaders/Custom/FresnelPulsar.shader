@@ -4,7 +4,7 @@ Shader "Custom/FresnelPulsar"
     {
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         _FresnelColor("Fresnel Color", Color) = (1, 1, 1, 1)
-        _BaseTexture("Base Texture", 2D) = "white" {}
+        _BaseMap("Base Map", 2D) = "white" {}
         _NormalTexture("Normal Texture", 2D) = "bump" {}
         _NormalStrength("Normal Strength", Range(0.0, 2.0)) = 1.0
         _FresnelPower("Fresnel Power", Range(1.0, 20.0)) = 4.0
@@ -49,7 +49,7 @@ Shader "Custom/FresnelPulsar"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half4 _FresnelColor;
-                float4 _BaseTexture_ST;
+                float4 _BaseMap_ST;
                 float _NormalStrength;
                 float _FresnelPower;
                 float _FresnelStrength;
@@ -57,13 +57,13 @@ Shader "Custom/FresnelPulsar"
                 float _FresnelAmplitude;
             CBUFFER_END
 
-            TEXTURE2D(_BaseTexture);
-            SAMPLER(sampler_BaseTexture);
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
 
             TEXTURE2D(_NormalTexture);
             SAMPLER(sampler_NormalTexture);
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
@@ -71,7 +71,7 @@ Shader "Custom/FresnelPulsar"
                 float4 tangentOS : TANGENT;
             };
 
-            struct v2f
+            struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
@@ -81,32 +81,32 @@ Shader "Custom/FresnelPulsar"
                 float4 tangentWS : TEXCOORD4;
             };
 
-            v2f vert(appdata v)
+            Varyings vert(Attributes input)
             {
-                v2f o = (v2f)0;
+                Varyings output = (Varyings)0;
 
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
-                o.normalWS = TransformObjectToWorldNormal(v.normalOS);
-                o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
-                o.viewWS = GetWorldSpaceViewDir(o.positionWS);
-                o.tangentWS = float4(TransformObjectToWorldDir(v.tangentOS.xyz), v.tangentOS.w);
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
+                output.viewWS = GetWorldSpaceViewDir(output.positionWS);
+                output.tangentWS = float4(TransformObjectToWorldDir(input.tangentOS.xyz), input.tangentOS.w);
 
-                return o;
+                return output;
             }
 
-            half4 frag(v2f i) : SV_TARGET
+            half4 frag(Varyings input) : SV_TARGET
             {
-                float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
-                float3 viewWS = normalize(i.viewWS);
-                float3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalTexture, sampler_NormalTexture, i.uv), _NormalStrength);
-                float3 binormalWS = cross(normalWS, i.tangentWS.xyz) * i.tangentWS.w * unity_WorldTransformParams.w;
+                float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
+                float3 viewWS = normalize(input.viewWS);
+                float3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalTexture, sampler_NormalTexture, input.uv), _NormalStrength);
+                float3 binormalWS = cross(normalWS, input.tangentWS.xyz) * input.tangentWS.w * unity_WorldTransformParams.w;
                 normalWS = normalize(
-                    normalTS.x * i.tangentWS.xyz +
+                    normalTS.x * input.tangentWS.xyz +
                     normalTS.y * binormalWS +
                     normalTS.z * normalWS);
 
-                float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
+                float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 half3 lightColor = mainLight.distanceAttenuation * mainLight.shadowAttenuation * mainLight.color;
 
@@ -116,7 +116,7 @@ Shader "Custom/FresnelPulsar"
                 float b = (2.0f * pi) / _FresnelPeriod;
                 float fresnelOffset = sin(_Time.y * b) * _FresnelAmplitude;
                 half3 fresnelLighting = pow(1.0f - saturate(dot(normalWS, viewWS)), _FresnelPower + fresnelOffset) * _FresnelStrength;
-                half4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
+                half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
                 half3 litColor = diffuseLighting * baseColor.rgb + fresnelLighting * _FresnelColor.rgb;
 
                 return half4(litColor, baseColor.a);
@@ -148,13 +148,13 @@ Shader "Custom/FresnelPulsar"
             float3 _LightDirection;
             float3 _LightPosition;
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
             };
 
-            struct v2f
+            struct Varyings
             {
                 float4 positionCS : SV_POSITION;
             };
@@ -176,16 +176,14 @@ Shader "Custom/FresnelPulsar"
                 return positionCS;
             }
 
-            v2f shadowPassVert(appdata v)
+            Varyings shadowPassVert(Attributes input)
             {
-                v2f o = (v2f)0;
-
-                o.positionCS = GetShadowPositionHClip(v.positionOS.xyz, v.normalOS);
-
-                return o;
+                Varyings output = (Varyings)0;
+                output.positionCS = GetShadowPositionHClip(input.positionOS.xyz, input.normalOS);
+                return output;
             }
 
-            float4 shadowPassFrag(v2f i) : SV_TARGET
+            float4 shadowPassFrag(Varyings i) : SV_TARGET
             {
                 return 0;
             }
@@ -204,31 +202,31 @@ Shader "Custom/FresnelPulsar"
             ColorMask R
 
             HLSLPROGRAM
-            #pragma vertex depthOnlyVert
-            #pragma fragment depthOnlyFrag
+            #pragma vertex vert
+            #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
             };
 
-            struct v2f
+            struct Varyings
             {
                 float4 positionCS : SV_POSITION;
             };
 
-            v2f depthOnlyVert(appdata v)
+            Varyings vert(Attributes input)
             {
-                v2f o = (v2f)0;
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                return o;
+                Varyings output = (Varyings)0;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                return output;
             }
 
-            float depthOnlyFrag(v2f i) : SV_TARGET
+            float frag(Varyings input) : SV_TARGET
             {
-                return i.positionCS.z;
+                return input.positionCS.z;
             }
 
             ENDHLSL
@@ -244,15 +242,15 @@ Shader "Custom/FresnelPulsar"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma vertex depthNormalsVert
-            #pragma fragment depthNormalsFrag
+            #pragma vertex vert
+            #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half4 _FresnelColor;
-                float4 _BaseTexture_ST;
+                float4 _BaseMap_ST;
                 float _NormalStrength;
                 float _FresnelPower;
                 float _FresnelStrength;
@@ -263,7 +261,7 @@ Shader "Custom/FresnelPulsar"
             TEXTURE2D(_NormalTexture);
             SAMPLER(sampler_NormalTexture);
 
-            struct appdata
+            struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
@@ -271,7 +269,7 @@ Shader "Custom/FresnelPulsar"
                 float4 tangentOS : TANGENT;
             };
 
-            struct v2f
+            struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
@@ -279,26 +277,26 @@ Shader "Custom/FresnelPulsar"
                 float4 tangentWS : TEXCOORD2;
             };
 
-            v2f depthNormalsVert(appdata v)
+            Varyings vert(Attributes input)
             {
-                v2f o = (v2f)0;
+                Varyings output = (Varyings)0;
 
-                o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTexture);
-                float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
-                o.normalWS = NormalizeNormalPerVertex(normalWS);
-                o.tangentWS = float4(TransformObjectToWorldDir(v.tangentOS.xyz), v.tangentOS.w);
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.normalWS = NormalizeNormalPerVertex(normalWS);
+                output.tangentWS = float4(TransformObjectToWorldDir(input.tangentOS.xyz), input.tangentOS.w);
 
-                return o;
+                return output;
             }
 
-            float4 depthNormalsFrag(v2f i) : SV_TARGET
+            float4 frag(Varyings input) : SV_TARGET
             {
-                float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
-                float3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalTexture, sampler_NormalTexture, i.uv), _NormalStrength);
-                float3 binormalWS = cross(normalWS, i.tangentWS.xyz) * i.tangentWS.w * unity_WorldTransformParams.w;
+                float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
+                float3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalTexture, sampler_NormalTexture, input.uv), _NormalStrength);
+                float3 binormalWS = cross(normalWS, input.tangentWS.xyz) * input.tangentWS.w * unity_WorldTransformParams.w;
                 normalWS = normalize(
-                    normalTS.x * i.tangentWS.xyz +
+                    normalTS.x * input.tangentWS.xyz +
                     normalTS.y * binormalWS +
                     normalTS.z * normalWS);
 
