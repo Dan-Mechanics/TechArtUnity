@@ -15,9 +15,9 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.3938679, g: 0.44693395, b: 0.5, a: 1}
+  m_FogColor: {r: 0.47921857, g: 0.506942, b: 0.8396226, a: 1}
   m_FogMode: 2
-  m_FogDensity: 0.039
+  m_FogDensity: 0.058
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
@@ -491,7 +491,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.3938679, g: 0.44693395, b: 0.5, a: 1}
+  m_BackGroundColor: {r: 0.47921857, g: 0.506942, b: 0.8396226, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1931,7 +1931,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 84f5a73162526b344bbc4de89bf9d5cb, type: 2}
+  - {fileID: 2100000, guid: 45081a43c46a4dc4eb80d94e50a770c9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2478,34 +2478,6 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 330585545}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: skyColor.b
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: skyColor.g
-      value: 0.44693395
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: skyColor.r
-      value: 0.3938679
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: sunColor.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: sunColor.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: sunColor.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: 'materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 84f5a73162526b344bbc4de89bf9d5cb, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

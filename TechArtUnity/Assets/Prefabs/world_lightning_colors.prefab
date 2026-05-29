@@ -45,10 +45,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 0}
-  sunColor: {r: 1, g: 0.23113209, b: 0.23113209, a: 1}
-  skyColor: {r: 0.21791564, g: 0.5140023, b: 0.7830189, a: 1}
+  sunColor: {r: 1, g: 0.9964086, b: 0.7311321, a: 1}
+  skyColor: {r: 0.47921857, g: 0.506942, b: 0.8396226, a: 1}
   shadingThreshold: 0.098
   diffuseBias: 0
   materials:
-  - {fileID: 2100000, guid: 1863ceef2425569408bc0569388555ee, type: 2}
-  - {fileID: 2100000, guid: 717031d0966d5454490434593a519fe8, type: 2}
+  - {fileID: 2100000, guid: aee3cf6e130992a45ab094b3cd45a26d, type: 2}
+  - {fileID: 2100000, guid: 187e3a86d9543994591655cddac2db0a, type: 2}
+  - {fileID: 2100000, guid: d57212d80a4b4a340afc953d8e5bb324, type: 2}
+  - {fileID: 2100000, guid: 2df1224228c2d384b87b78ed80cca5fc, type: 2}
+  - {fileID: 2100000, guid: e062eef76f9c2d0489bb6e073d87eda0, type: 2}
+  - {fileID: 2100000, guid: 7c356ee0fe480a24fbccba63a93ea8f4, type: 2}
+  - {fileID: 2100000, guid: c787df8872815a9409da38ff612f94b8, type: 2}
+  - {fileID: 2100000, guid: 7079159efc7c3b84aa002fbf9d6a53d9, type: 2}
+  - {fileID: 2100000, guid: c35490559be99f949be7aa3e97690aa4, type: 2}
+  - {fileID: 2100000, guid: edc02d7bfefce4f4aa6ce43033820cb4, type: 2}
+  - {fileID: 2100000, guid: df3162d26d7433e44a7fbbb74023987d, type: 2}
+  - {fileID: 2100000, guid: 7805f02cde847fa488989988fbc3d7eb, type: 2}
+  - {fileID: 2100000, guid: a533ed8eb4eba624da8b36b62d2da8f8, type: 2}
+  - {fileID: 2100000, guid: be28608a412284745bf8a1052a883b43, type: 2}
+  - {fileID: 2100000, guid: ba1a85e7c777c594a838a1801607f787, type: 2}
+  - {fileID: 2100000, guid: 8918331320feeb1428adceb85606a3a4, type: 2}
+  - {fileID: 2100000, guid: 45081a43c46a4dc4eb80d94e50a770c9, type: 2}
+  - {fileID: 2100000, guid: 5b0be96218e756142a2e34319dbed986, type: 2}
