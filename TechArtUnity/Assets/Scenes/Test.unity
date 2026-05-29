@@ -742,30 +742,6 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 1369737626}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: skyColor.b
-      value: 0.7830189
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: skyColor.g
-      value: 0.5140023
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: skyColor.r
-      value: 0.21791564
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: sunColor.b
-      value: 0.23113209
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: sunColor.g
-      value: 0.23113209
-      objectReference: {fileID: 0}
-    - target: {fileID: 6940024536697817071, guid: 34c6186a6886f344980c25b29bc28375, type: 3}
-      propertyPath: sunColor.r
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -20,6 +20,9 @@ namespace TechArtUnity
             RenderSettings.fogColor = skyColor;
             Shader.SetGlobalFloat("_ShadingThreshold", shadingThreshold);
             Shader.SetGlobalFloat("_DiffuseBias", diffuseBias);
+            if (materials == null)
+                return; 
+
             for (int i = 0; i < materials.Length; i++)
             {
                 if (materials[i] == null)
