@@ -117,7 +117,7 @@ Shader "Custom/FresnelPulsar"
                 float fresnelOffset = sin(_Time.y * b) * _FresnelAmplitude;
                 half3 fresnelLighting = pow(1.0f - saturate(dot(normalWS, viewWS)), _FresnelPower + fresnelOffset) * _FresnelStrength;
                 half4 baseColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.uv) * _BaseColor;
-                half3 litColor = diffuseLighting * baseColor.rgb + fresnelLighting * _FresnelColor.rgb; 
+                half3 litColor = diffuseLighting * baseColor.rgb + fresnelLighting * _FresnelColor.rgb;
 
                 return half4(litColor, baseColor.a);
             }
@@ -179,7 +179,9 @@ Shader "Custom/FresnelPulsar"
             v2f shadowPassVert(appdata v)
             {
                 v2f o = (v2f)0;
-                o.positionCS = GetShadowPositionHClip(v.positionOS.xyz, v.normalOS); 
+
+                o.positionCS = GetShadowPositionHClip(v.positionOS.xyz, v.normalOS);
+
                 return o;
             }
 
@@ -242,8 +244,8 @@ Shader "Custom/FresnelPulsar"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
+            #pragma vertex depthNormalsVert
+            #pragma fragment depthNormalsFrag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -277,7 +279,7 @@ Shader "Custom/FresnelPulsar"
                 float4 tangentWS : TEXCOORD2;
             };
 
-            v2f vert(appdata v)
+            v2f depthNormalsVert(appdata v)
             {
                 v2f o = (v2f)0;
 
@@ -290,7 +292,7 @@ Shader "Custom/FresnelPulsar"
                 return o;
             }
 
-            float4 frag(v2f i) : SV_TARGET
+            float4 depthNormalsFrag(v2f i) : SV_TARGET
             {
                 float3 normalWS = NormalizeNormalPerPixel(i.normalWS);
                 float3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalTexture, sampler_NormalTexture, i.uv), _NormalStrength);

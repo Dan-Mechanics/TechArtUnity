@@ -219,7 +219,7 @@ Shader "Custom/WorldLightingColorsClipped"
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;
-                output.positionCS = GetShadowPositionHClip((float3)input.positionOS, input.normalOS);
+                output.positionCS = GetShadowPositionHClip(input.positionOS.xyz, input.normalOS);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 return output;
             }
