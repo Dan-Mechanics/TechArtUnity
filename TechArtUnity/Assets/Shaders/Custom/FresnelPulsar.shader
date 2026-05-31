@@ -69,6 +69,7 @@ Shader "Custom/FresnelPulsar"
                 float2 uv : TEXCOORD0;
                 float3 normalOS : NORMAL;
                 float4 tangentOS : TANGENT;
+                float2 dynamicLightmapUV : TEXCOORD2;
             };
 
             struct Varyings
@@ -79,6 +80,7 @@ Shader "Custom/FresnelPulsar"
                 float3 positionWS : TEXCOORD2;
                 float3 viewWS : TEXCOORD3;
                 float4 tangentWS : TEXCOORD4;
+                float2 dynamicLightmapUV : TEXCOORD5;
             };
 
             Varyings vert(Attributes input)
@@ -107,11 +109,26 @@ Shader "Custom/FresnelPulsar"
                     normalTS.z * normalWS);
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+                float4 shadowMask = SAMPLE_SHADOWMASK(input.dynamicLightmapUV);
                 Light mainLight = GetMainLight(shadowCoord);
                 half3 lightColor = mainLight.distanceAttenuation * mainLight.shadowAttenuation * mainLight.color;
 
                 half3 diffuseLighting = saturate(dot(normalWS, mainLight.direction)) * lightColor;
- 
+
+                #ifdef _ADDITIONAL_LIGHTS
+                InputData inputData = (InputData)0;
+                inputData.positionWS = input.positionWS;
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+
+                uint lightCount = GetAdditionalLightsCount();
+                LIGHT_LOOP_BEGIN(lightCount)
+
+                    Light light = GetAdditionalLight(lightIndex, input.positionWS, shadowMask);
+                    lightColor = light.distanceAttenuation * light.shadowAttenuation * light.color;
+                    diffuseLighting += saturate(dot(normalWS, light.direction)) * lightColor;
+                LIGHT_LOOP_END
+                #endif
+
                 float pi = 3.14159265359f;
                 float b = (2.0f * pi) / _FresnelPeriod;
                 float fresnelOffset = sin(_Time.y * b) * _FresnelAmplitude;
