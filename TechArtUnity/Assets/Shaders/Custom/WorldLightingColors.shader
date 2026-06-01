@@ -109,7 +109,7 @@ Shader "Custom/WorldLightingColors"
             half4 frag(Varyings input) : SV_TARGET
             {
                 half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor; 
- 
+
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 
@@ -140,6 +140,9 @@ Shader "Custom/WorldLightingColors"
                 litColor.rgb = MixFog(litColor.rgb, fogFactor);
 
                 half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_BaseMap, input.uv).r; 
+                half gray = (textureColor.r + textureColor.g + textureColor.b) / 3.0f;
+                half4 grayscale = half4(gray, gray, gray, 1.0f);
+                textureColor = lerp(grayscale, textureColor, 1.0f + emmisive);
                 litColor = lerp(litColor, textureColor, emmisive);
 
                 return litColor;
