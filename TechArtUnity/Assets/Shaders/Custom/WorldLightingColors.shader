@@ -4,10 +4,12 @@ Shader "Custom/WorldLightingColors"
     {
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         _BaseMap("Base Map", 2D) = "white" {}
+        [Toggle(_ALPHA_CLIPPING)] _AlphaClipping("Alpha Clipping", Integer) = 0
+        _AlphaThreshold("Alpha Threshold", Range(0.1, 0.9)) = 0.5
         _SunColor("Sun Color", Color) = (1, 1, 1, 1)
         _SkyColor("Sky Color", Color) = (0, 0, 1, 1)
-        _EmissionMap("Emission Map", 2D) = "black" {}
-        _ShadowMap("Shadow Map", 2D) = "white" {}
+        [NoScaleOffset] _EmissionMap("Emission Map", 2D) = "black" {}
+        [NoScaleOffset] _ShadowMap("Shadow Map", 2D) = "white" {}
     }
     
     SubShader
@@ -42,6 +44,8 @@ Shader "Custom/WorldLightingColors"
             #pragma multi_compile _ _FORWARD_PLUS // USE _CLUSTER_LIGHT_LOOP IN UNITY 6.1 AND ABOVE.
             #pragma multi_compile_fog // DECLARE USING FOG.
 
+            #pragma shader_feature_local _ _ALPHA_CLIPPING
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
@@ -54,8 +58,9 @@ Shader "Custom/WorldLightingColors"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
-                half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH UNIFORMS, THE COLOR IS INACCURATE.
-                half4 _SkyColor;
+                half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH UNIFORMS THE COLOR IS INACCURATE.
+                half4 _SkyColor; 
+                half _AlphaThreshold;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -94,9 +99,9 @@ Shader "Custom/WorldLightingColors"
 
                 // GET UNITY FOGCOORD.
                 #if defined(_FOG_FRAGMENT)
-                output.fogCoord = vertexInput.positionVS.z;
+                    output.fogCoord = vertexInput.positionVS.z;
                 #else
-                output.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
+                    output.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
                 #endif
 
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
@@ -108,8 +113,12 @@ Shader "Custom/WorldLightingColors"
             // HALF IS FOR COLORS, FLOAT IS FOR POSITIONS.
             half4 frag(Varyings input) : SV_TARGET
             {
-                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor; 
- 
+                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                #ifdef _ALPHA_CLIPPING
+                    clip(textureColor.a - _AlphaThreshold); // EARLY RETURN IF CLIPPED.
+                #endif
+                textureColor = textureColor * _BaseColor;
+
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 
@@ -148,8 +157,8 @@ Shader "Custom/WorldLightingColors"
             ENDHLSL
         }
         
-        // DON'T USE LIT SHADOWCASTER FOR
-        // BETTER CBUFFER USAGE.
+        // HANDLE THE SHADOWS. WE CAN'T USE LIT SHADOWCASTER 
+        // BECAUSE IT DOESN'T WORK WITH ALPHA CLIPPING.
         Pass
         {
             Tags
@@ -163,6 +172,8 @@ Shader "Custom/WorldLightingColors"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+
+            #pragma shader_feature_local _ _ALPHA_CLIPPING
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -187,11 +198,15 @@ Shader "Custom/WorldLightingColors"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                #ifdef _ALPHA_CLIPPING
+                    float2 uv : TEXCOORD0;
+                #endif
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
             };
 
             float4 GetShadowPositionHClip(float3 positionOS, float3 normalOS)
@@ -214,11 +229,17 @@ Shader "Custom/WorldLightingColors"
             {
                 Varyings output = (Varyings)0;
                 output.positionCS = GetShadowPositionHClip(input.positionOS.xyz, input.normalOS);
+                #ifdef _ALPHA_CLIPPING
+                    output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                #endif
                 return output;
             }
 
             half4 frag(Varyings input) : SV_TARGET
             {
+                #ifdef _ALPHA_CLIPPING
+                    clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a - _AlphaThreshold);
+                #endif
                 return 0;
             }
 

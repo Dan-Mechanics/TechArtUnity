@@ -52,7 +52,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Decimal_Places: 10
-    - _Fidelity: 15
+    - _Fidelity: 16
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1
