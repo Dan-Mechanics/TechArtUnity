@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: wlc_arthur
-  m_Shader: {fileID: 4800000, guid: 4fa36f7b5ec4cde4eb829b03ff33b7c9, type: 3}
+  m_Name: hatching
+  m_Shader: {fileID: 4800000, guid: c40807e34fe87fb43916a87de5dfac39, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -64,7 +64,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShadowMap:
-        m_Texture: {fileID: 2800000, guid: 69c874e500d6c8b46a7897b8a80bc84b, type: 3}
+        m_Texture: {fileID: 2800000, guid: 4b92f11217f5dab4abbeab83a5b6d105, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
