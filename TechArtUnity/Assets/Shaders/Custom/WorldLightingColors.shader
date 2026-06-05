@@ -26,7 +26,7 @@ Shader "Custom/WorldLightingColors"
             "Queue" = "Geometry"
         }
         
-        // OUTLINE PASS
+        // OUTLINE PASS.
         Cull Front
         Pass
         {
