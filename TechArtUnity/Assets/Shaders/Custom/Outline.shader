@@ -6,7 +6,7 @@ Shader "Custom/Outline"
         _BaseMap("Base Map", 2D) = "white" {}
         [Toggle(_ALPHA_CLIPPING)] _AlphaClipping("Alpha Clipping", Integer) = 0
         _AlphaThreshold("Alpha Threshold", Range(0.1, 0.9)) = 0.5
-        [Toggle(_OUTLINE)] _Outline("Outline", Integer) = 0
+        [Toggle(_HIDE_OUTLINE)] _HideOutline("Hide Outline", Integer) = 1
         _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
         _OutlineWidth("Outline Width", Float) = 0.01
         _LineDistance("Line Distance", Float) = 100
@@ -52,7 +52,7 @@ Shader "Custom/Outline"
             #pragma multi_compile_fog // DECLARE USING FOG.
 
             #pragma shader_feature_local _ _ALPHA_CLIPPING
-            #pragma shader_feature_local _ _OUTLINE
+            #pragma shader_feature_local _ _HIDE_OUTLINE
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -98,6 +98,10 @@ Shader "Custom/Outline"
                 // DEFAULT INITIALIZATION.
                 Varyings output = (Varyings)0;
 
+                #if defined(_HIDE_OUTLINE) || defined(_ALPHA_CLIPPING)
+                    return output;
+                #endif
+
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
  
@@ -125,6 +129,10 @@ Shader "Custom/Outline"
 
             half4 frag(Varyings input) : SV_TARGET
             {
+                #if defined(_HIDE_OUTLINE) || defined(_ALPHA_CLIPPING)
+                    discard;
+                #endif
+
                 half4 alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a;
                 clip(alpha - _AlphaThreshold);
 
