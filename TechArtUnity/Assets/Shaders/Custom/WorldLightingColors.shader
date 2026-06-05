@@ -6,10 +6,15 @@ Shader "Custom/WorldLightingColors"
         _BaseMap("Base Map", 2D) = "white" {}
         [Toggle(_ALPHA_CLIPPING)] _AlphaClipping("Alpha Clipping", Integer) = 0
         _AlphaThreshold("Alpha Threshold", Range(0.1, 0.9)) = 0.5
+        [Toggle(_HIDE_OUTLINE)] _HideOutline("Hide Outline", Integer) = 1
+        _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
+        _OutlineWidth("Outline Width", Float) = 0.01
+        _LineDistance("Line Distance", Float) = 25
         _SunColor("Sun Color", Color) = (1, 1, 1, 1)
         _SkyColor("Sky Color", Color) = (0, 0, 1, 1)
         [NoScaleOffset] _EmissionMap("Emission Map", 2D) = "black" {}
         [NoScaleOffset] _ShadowMap("Shadow Map", 2D) = "white" {}
+        [NoScaleOffset] _OutlineMap("Outline Map", 2D) = "white" {}
     }
     
     SubShader
@@ -20,16 +25,134 @@ Shader "Custom/WorldLightingColors"
             "RenderType" = "Opaque"
             "Queue" = "Geometry"
         }
+        
+        // OUTLINE PASS
+        Cull Front
+        Pass
+        {
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fog // DECLARE USING FOG.
 
+            #pragma shader_feature_local _ _ALPHA_CLIPPING
+            #pragma shader_feature_local _ _HIDE_OUTLINE
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Unlit.hlsl"
+ 
+            // UNIFORMS FROM WORLDLIGHTINGCOLORS.CS.
+            half _ShadingThreshold;
+            half _DiffuseBias;
+            // STANDS FOR CONSTANT BUFFER,
+            // IT IS USED FOR SPR-BATCHING.
+            CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
+                float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
+                half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH UNIFORMS THE COLOR IS INACCURATE.
+                half4 _SkyColor; 
+                half4 _OutlineColor;
+                float _OutlineWidth;
+                float _LineDistance;
+                half _AlphaThreshold;
+            CBUFFER_END
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            TEXTURE2D(_OutlineMap);
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION; 
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
+            
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION; 
+                float2 uv : TEXCOORD0;
+                float fogCoord : TEXCOORD1;
+            };
+
+            Varyings vert(Attributes input)
+            {
+                // DEFAULT INITIALIZATION.
+                Varyings output = (Varyings)0;
+
+                #if defined(_HIDE_OUTLINE) || defined(_ALPHA_CLIPPING)
+                    return output;
+                #endif
+
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+
+                // THIS IS THE OUTLINE FROM THE CLASS,
+                // WITH ONE NOTABLE CHANGE OF DISCARDING BASED ON TEXTURE.
+                float4 clip = vertexInput.positionCS;
+                float3 worldPos = TransformObjectToWorld(input.positionOS.xyz);
+
+                float depth = clip.w / _LineDistance;
+                float falloff = 1.0 - saturate(depth);
+                float width = _OutlineWidth * falloff;
+
+                float3 worldNormal = TransformObjectToWorldNormal(input.normalOS);
+                worldPos += normalize(worldNormal) * width * clip.w;
+
+                output.positionCS = TransformWorldToHClip(worldPos);
+
+                // GET UNITY FOGCOORD.
+                #if defined(_FOG_FRAGMENT)
+                    output.fogCoord = vertexInput.positionVS.z;
+                #else
+                    output.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
+                #endif
+
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_TARGET
+            {
+                #if defined(_HIDE_OUTLINE) || defined(_ALPHA_CLIPPING)
+                    discard;
+                #endif
+
+                half4 alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a;
+                clip(alpha - _AlphaThreshold);
+
+                half outlineAmount = SAMPLE_TEXTURE2D(_OutlineMap, sampler_BaseMap, input.uv).r;
+                clip(outlineAmount - _AlphaThreshold);
+                
+                #if defined(_FOG_FRAGMENT)
+                #if (defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2))
+                    float viewZ = -input.fogCoord;
+                    float nearToFarZ = max(viewZ - _ProjectionParams.y, 0);
+                    half fogFactor = ComputeFogFactorZ0ToFar(nearToFarZ);
+                #else
+                    half fogFactor = 0;
+                #endif
+                #else
+                    half fogFactor = input.fogCoord;
+                #endif
+
+                half4 litColor = _OutlineColor;
+                litColor.rgb = MixFog(litColor.rgb, fogFactor * 0.5f);
+                return litColor;
+            }
+
+            ENDHLSL
+        }
+
+        // LIT PASS.
+        Cull Back
         Pass
         {
             Tags
             {
                 "LightMode" = "UniversalForward"
             }
-
-            ZWrite On
-            ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -60,6 +183,9 @@ Shader "Custom/WorldLightingColors"
                 float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
                 half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH UNIFORMS THE COLOR IS INACCURATE.
                 half4 _SkyColor; 
+                half4 _OutlineColor;
+                float _OutlineWidth;
+                float _LineDistance;
                 half _AlphaThreshold;
             CBUFFER_END
 
@@ -148,6 +274,7 @@ Shader "Custom/WorldLightingColors"
                 // APPLY FOG.
                 litColor.rgb = MixFog(litColor.rgb, fogFactor);
 
+                
                 half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_BaseMap, input.uv).r; 
                 litColor = lerp(litColor, textureColor, emmisive);
 
@@ -185,10 +312,13 @@ Shader "Custom/WorldLightingColors"
             float3 _LightPosition;
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
-                float4 _BaseMap_ST;
-                half4 _SunColor;
-                half4 _SkyColor;
-                half _AlphaThreshold; 
+                float4 _BaseMap_ST; // "ST" IS TILING AND OFFSET.
+                half4 _SunColor; // THIS NEEDS TO BE HERE BECAUSE WITH UNIFORMS THE COLOR IS INACCURATE.
+                half4 _SkyColor; 
+                half4 _OutlineColor;
+                float _OutlineWidth;
+                float _LineDistance;
+                half _AlphaThreshold;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);

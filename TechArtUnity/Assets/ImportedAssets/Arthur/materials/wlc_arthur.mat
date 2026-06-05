@@ -59,6 +59,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _OutlineMap:
+        m_Texture: {fileID: 2800000, guid: 24f27957087587644963828e29196c70, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -69,6 +73,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints:
     - _AlphaClipping: 0
+    - _HideOutline: 0
     m_Floats:
     - _AlphaThreshold: 0.5
     - _BumpScale: 1
@@ -78,9 +83,11 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _LineDistance: 25
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
+    - _OutlineWidth: 0.005
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -91,7 +98,8 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _SkyColor: {r: 0.5728907, g: 0.57345027, b: 0.7735849, a: 1}
-    - _SunColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OutlineColor: {r: 0.4666667, g: 0.56331, b: 1, a: 1}
+    - _SkyColor: {r: 0.369571, g: 0.37764108, b: 0.5188679, a: 1}
+    - _SunColor: {r: 0.6014151, g: 0.7216981, b: 0.8018868, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
