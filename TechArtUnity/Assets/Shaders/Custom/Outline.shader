@@ -8,9 +8,8 @@ Shader "Custom/Outline"
         _AlphaThreshold("Alpha Threshold", Range(0.1, 0.9)) = 0.5
         [Toggle(_OUTLINE)] _Outline("Outline", Integer) = 0
         _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
-        _OutlineWidth("Outline Width", Float) = 0.1
+        _OutlineWidth("Outline Width", Float) = 0.01
         _LineDistance("Line Distance", Float) = 100
-        _Bump("_Bump Distance", Float) = 0
         _SunColor("Sun Color", Color) = (1, 1, 1, 1)
         _SkyColor("Sky Color", Color) = (0, 0, 1, 1)
         [NoScaleOffset] _EmissionMap("Emission Map", 2D) = "black" {}
@@ -75,7 +74,10 @@ Shader "Custom/Outline"
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
+            // TEXTURE FILTER ( REPEAT, CLAMPED, ETC ).
             SAMPLER(sampler_BaseMap);
+
+            TEXTURE2D(_ShadowMap);
 
             struct Attributes
             {
@@ -123,10 +125,13 @@ Shader "Custom/Outline"
 
             half4 frag(Varyings input) : SV_TARGET
             {
-                #ifdef _ALPHA_CLIPPING
-                    clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a - _AlphaThreshold);
-                #endif
+                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                clip(textureColor.a - _AlphaThreshold);
 
+                half4 emmisive = SAMPLE_TEXTURE2D(_ShadowMap, sampler_BaseMap, input.uv);
+                
+                //clip(-emmisive.r + 0.5f);
+                
                 #if defined(_FOG_FRAGMENT)
                 #if (defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2))
                     float viewZ = -input.fogCoord;
@@ -139,7 +144,7 @@ Shader "Custom/Outline"
                     half fogFactor = input.fogCoord;
                 #endif
 
-                half4 litColor = _OutlineColor;
+                half4 litColor = emmisive;
                 litColor.rgb = MixFog(litColor.rgb, fogFactor * 0.5f);
                 return litColor;
             }
@@ -156,8 +161,8 @@ Shader "Custom/Outline"
                 "LightMode" = "UniversalForward"
             }
 
-          //  ZWrite On
-         //   ZTest LEqual
+            ZWrite On
+            ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -279,6 +284,7 @@ Shader "Custom/Outline"
                 // APPLY FOG.
                 litColor.rgb = MixFog(litColor.rgb, fogFactor);
 
+                
                 half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_BaseMap, input.uv).r; 
                 litColor = lerp(litColor, textureColor, emmisive);
 
