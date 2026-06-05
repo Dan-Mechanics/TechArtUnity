@@ -14,6 +14,7 @@ Shader "Custom/Outline"
         _SkyColor("Sky Color", Color) = (0, 0, 1, 1)
         [NoScaleOffset] _EmissionMap("Emission Map", 2D) = "black" {}
         [NoScaleOffset] _ShadowMap("Shadow Map", 2D) = "white" {}
+        [NoScaleOffset] _OutlineMap("Outline Map", 2D) = "white" {}
     }
     
     SubShader
@@ -74,10 +75,9 @@ Shader "Custom/Outline"
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
-            // TEXTURE FILTER ( REPEAT, CLAMPED, ETC ).
             SAMPLER(sampler_BaseMap);
 
-            TEXTURE2D(_ShadowMap);
+            TEXTURE2D(_OutlineMap);
 
             struct Attributes
             {
@@ -125,12 +125,11 @@ Shader "Custom/Outline"
 
             half4 frag(Varyings input) : SV_TARGET
             {
-                half4 textureColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                clip(textureColor.a - _AlphaThreshold);
+                half4 alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a;
+                clip(alpha - _AlphaThreshold);
 
-                half4 emmisive = SAMPLE_TEXTURE2D(_ShadowMap, sampler_BaseMap, input.uv);
-                
-                //clip(-emmisive.r + 0.5f);
+                half outlineAmount = SAMPLE_TEXTURE2D(_OutlineMap, sampler_BaseMap, input.uv).r;
+                clip(outlineAmount - _AlphaThreshold);
                 
                 #if defined(_FOG_FRAGMENT)
                 #if (defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2))
@@ -144,7 +143,7 @@ Shader "Custom/Outline"
                     half fogFactor = input.fogCoord;
                 #endif
 
-                half4 litColor = emmisive;
+                half4 litColor = _OutlineColor;
                 litColor.rgb = MixFog(litColor.rgb, fogFactor * 0.5f);
                 return litColor;
             }
@@ -160,9 +159,6 @@ Shader "Custom/Outline"
             {
                 "LightMode" = "UniversalForward"
             }
-
-            ZWrite On
-            ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex vert
