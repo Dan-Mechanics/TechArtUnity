@@ -148,8 +148,8 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _OutlineColor: {r: 1, g: 1, b: 1, a: 1}
-    - _SkyColor: {r: 0.369571, g: 0.37764108, b: 0.5188679, a: 1}
+    - _SkyColor: {r: 0.3325472, g: 0.3325472, b: 0.5, a: 1}
     - _SpecColor: {r: 0, g: 0, b: 0, a: 1}
-    - _SunColor: {r: 0.6014151, g: 0.7216981, b: 0.8018868, a: 1}
+    - _SunColor: {r: 0.637994, g: 0.6690206, b: 0.764151, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

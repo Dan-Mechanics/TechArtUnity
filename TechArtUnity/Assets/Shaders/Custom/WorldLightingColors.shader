@@ -274,7 +274,6 @@ Shader "Custom/WorldLightingColors"
                 // APPLY FOG.
                 litColor.rgb = MixFog(litColor.rgb, fogFactor);
 
-                
                 half emmisive = SAMPLE_TEXTURE2D(_EmissionMap, sampler_BaseMap, input.uv).r; 
                 litColor = lerp(litColor, textureColor, emmisive);
 
